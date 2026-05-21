@@ -44,10 +44,6 @@ const parseDataUrlImage = (dataUrl) => {
 };
 
 export default async function handler(req, res) {
-  console.log("API hit: photos");
-  console.log("Sanity project:", projectId);
-  console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
-
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
@@ -72,14 +68,10 @@ export default async function handler(req, res) {
 
     const image = parseDataUrlImage(body.imageDataUrl);
 
-    console.log("Uploading photo asset for:", submittedBy || "anonymous");
-
     const asset = await client.assets.upload("image", image.buffer, {
       contentType: image.mimeType,
       filename: `${title || "submitted-photo"}.${image.mimeType.split("/")[1] || "jpg"}`,
     });
-
-    console.log("Photo asset uploaded:", asset._id, "- creating galleryPhoto document");
 
     const created = await client.create({
       _type: "galleryPhoto",
@@ -96,7 +88,6 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
-    console.log("galleryPhoto created:", created._id);
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
     console.error("Sanity create error:", error);

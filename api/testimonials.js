@@ -27,10 +27,6 @@ const cleanText = (value, maxLength = 500) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
 export default async function handler(req, res) {
-  console.log("API hit: testimonials");
-  console.log("Sanity project:", projectId);
-  console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
-
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
@@ -54,8 +50,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, error: "Name and testimonial are required." });
     }
 
-    console.log("Creating testimonial for:", name);
-
     const created = await client.create({
       _type: "testimonial",
       name,
@@ -68,7 +62,6 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
-    console.log("testimonial created:", created._id);
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
     console.error("Sanity create error:", error);

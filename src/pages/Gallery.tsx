@@ -24,7 +24,6 @@ const Gallery = () => {
         const photoRows = await getApprovedGalleryPhotos();
         setPhotos(photoRows.length > 0 ? photoRows : localGalleryPhotos);
       } catch (error) {
-        console.warn("Could not load Sanity gallery photos, using fallback.", error);
         toast({
           title: "Could not load latest photos",
           description: "Showing local gallery photos instead.",
@@ -61,6 +60,10 @@ const Gallery = () => {
                   <img
                     src={photo.imageUrl}
                     alt={photo.title || photo.caption || "North Star Santa gallery photo"}
+                    width={900}
+                    height={675}
+                    loading="lazy"
+                    decoding="async"
                     className="aspect-[4/3] w-full object-cover"
                     style={{
                       objectFit: photo.imageFit || "cover",
@@ -126,11 +129,8 @@ const PhotoSubmissionForm = () => {
           }),
         });
 
-        console.log("[photos] API response status:", photoResponse.status, photoResponse.statusText);
-
         if (!photoResponse.ok) {
           const payload = await photoResponse.json().catch(() => null);
-          console.log("[photos] API error response body:", payload);
           throw new Error(payload?.error || "Could not submit one of the photos.");
         }
       }

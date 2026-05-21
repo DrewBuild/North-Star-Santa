@@ -1,9 +1,5 @@
 import { isSanityConfigured, sanityClient } from "@/lib/sanityClient";
 
-const logSanity = (...args: unknown[]) => {
-  if (import.meta.env.DEV) console.log(...args);
-};
-
 export interface Testimonial {
   id: string;
   name: string;
@@ -99,7 +95,6 @@ export const getApprovedTestimonials = async () => {
         submittedAt
       }
   `);
-  logSanity("[sanity] approved testimonials fetched:", rows.length);
   return rows;
 };
 
@@ -118,7 +113,6 @@ export const getApprovedGalleryPhotos = async (limit = 24) => {
         submittedAt
       }
   `);
-  logSanity("[sanity] approved gallery photos fetched:", rows.length);
   return rows;
 };
 
@@ -137,7 +131,6 @@ export const getFeaturedTestimonials = async () => {
         submittedAt
       }
   `);
-  logSanity("[sanity] featured testimonials fetched:", rows.length);
   return rows;
 };
 
@@ -154,7 +147,6 @@ export const getSiteSettings = async () => {
       "logoUrl": logo.asset->url
     }
   `);
-  logSanity("[sanity] site settings fetched:", Boolean(result));
   return result;
 };
 
@@ -168,7 +160,6 @@ export const getBookedSlots = async () => {
       status
     }
   `);
-  logSanity("[sanity] booked slots fetched:", rows.length);
   return rows;
 };
 
@@ -189,7 +180,6 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
       repeatYearly
     }
   `);
-  logSanity("[sanity] active blockout dates fetched:", rows.length);
   return rows ?? [];
 };
 

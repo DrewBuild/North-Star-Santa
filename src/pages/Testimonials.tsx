@@ -33,7 +33,6 @@ const Testimonials = () => {
         setTestimonials(testimonialRows.length > 0 ? testimonialRows : realTestimonials);
       } catch (error) {
         // Sanity unavailable — keep the fallback content already in state
-        console.warn("Could not load Sanity testimonials, using fallback.", error);
         toast({
           title: "Could not load latest content",
           description: "Showing cached content instead.",
@@ -117,11 +116,8 @@ const ShareForm = () => {
         }),
       });
 
-      console.log("[testimonials] API response status:", testimonialResponse.status, testimonialResponse.statusText);
-
       if (!testimonialResponse.ok) {
         const payload = await testimonialResponse.json().catch(() => null);
-        console.log("[testimonials] API error response body:", payload);
         throw new Error(payload?.error || "Could not submit testimonial.");
       }
 

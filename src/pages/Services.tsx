@@ -57,6 +57,10 @@ const Services = () => {
                 <img
                   src={s.photo.imageUrl}
                   alt={s.photo.alt}
+                  width={900}
+                  height={675}
+                  loading="lazy"
+                  decoding="async"
                   className="aspect-[4/3] w-full rounded-lg object-cover shadow-elegant border border-border"
                   style={{ objectPosition: s.photo.position }}
                 />

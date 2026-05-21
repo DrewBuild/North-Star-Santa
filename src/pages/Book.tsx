@@ -90,35 +90,37 @@ const Book = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("[sanity] project ID:", import.meta.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
-
     const loadBookedSlots = async () => {
       try {
         setBookedSlots(await getBookedSlots());
       } catch (error) {
-        console.warn("Could not load Sanity booking requests", error);
+        toast({
+          title: "Could not load booked times",
+          description: "Some already-booked times may not appear as unavailable.",
+          variant: "destructive",
+        });
       }
     };
 
     const loadBlockoutDates = async () => {
       try {
         const dates = await getActiveBlockoutDates();
-        console.log("[blockout] fetched blockout dates:", dates);
         setBlockoutDates(dates);
       } catch (error) {
-        // Non-fatal: fall through and allow all dates so the form stays usable
-        console.warn("[blockout] Could not load blockout dates, all dates allowed", error);
+        toast({
+          title: "Could not load unavailable dates",
+          description: "Please submit only if you know Santa is available.",
+          variant: "destructive",
+        });
       }
     };
 
     loadBookedSlots();
     loadBlockoutDates();
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!form.date) return;
-    console.log("[blockout] selected event date:", form.date);
-    console.log("[blockout] isDateBlocked result:", isDateBlocked(form.date, blockoutDates));
     setDateBlockMessage(isDateBlocked(form.date, blockoutDates) ? BLOCKED_DATE_MESSAGE : null);
   }, [form.date, blockoutDates]);
 
@@ -215,11 +217,8 @@ const Book = () => {
         }),
       });
 
-      console.log("[booking] API response status:", response.status, response.statusText);
-
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
-        console.log("[booking] API error response body:", payload);
         throw new Error(payload?.error || "Could not send booking request.");
       }
 

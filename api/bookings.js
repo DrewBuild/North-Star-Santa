@@ -85,11 +85,98 @@ const eventTypeMap = {
   "Breakfast / Lunch / Dinner with Santa": "Other",
 };
 
-export default async function handler(req, res) {
-  console.log("API hit: bookings");
-  console.log("Sanity project:", projectId);
-  console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
+const detailRows = (details) =>
+  details
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")
+    .map(([label, value]) => `${label}: ${String(value).trim()}`)
+    .join("\n");
+
+const detailRowsHtml = (details) =>
+  details
+    .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== "")
+    .map(([label, value]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</p>`)
+    .join("");
+
+const sendResendEmail = async ({ to, subject, text, html }) => {
+  if (!process.env.RESEND_API_KEY || !process.env.FROM_EMAIL || !to) return;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: process.env.FROM_EMAIL,
+      to,
+      subject,
+      text,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend failed with status ${response.status}${detail ? `: ${detail.slice(0, 500)}` : ""}`);
+  }
+};
+
+const sendBookingEmails = async ({ booking, sanityId }) => {
+  const details = [
+    ["Name", booking.fullName],
+    ["Email", booking.email],
+    ["Phone", booking.phone],
+    ["Event type", booking.eventType],
+    ["Date", booking.eventDate],
+    ["Time", booking.eventTime],
+    ["Location", booking.eventLocation],
+    ["Guests/children", booking.numberOfGuests],
+    ["Notes", booking.message],
+    ["Sanity document ID", sanityId],
+  ];
+  const textSummary = detailRows(details);
+  const htmlSummary = detailRowsHtml(details);
+  const messages = [];
+
+  if (process.env.BOOKING_NOTIFICATION_EMAIL) {
+    messages.push(
+      sendResendEmail({
+        to: process.env.BOOKING_NOTIFICATION_EMAIL,
+        subject: "New North Star Santa Booking Request",
+        text: `A new North Star Santa booking request was submitted.\n\n${textSummary}`,
+        html: `<p>A new North Star Santa booking request was submitted.</p>${htmlSummary}`,
+      }),
+    );
+  }
+
+  if (booking.email) {
+    messages.push(
+      sendResendEmail({
+        to: booking.email,
+        subject: "North Star Santa received your booking request",
+        text: `Thank you for your North Star Santa booking request. Santa will follow up soon.\n\n${textSummary}`,
+        html: `<p>Thank you for your North Star Santa booking request. Santa will follow up soon.</p>${htmlSummary}`,
+      }),
+    );
+  }
+
+  const results = await Promise.allSettled(messages);
+  results.forEach((result) => {
+    if (result.status === "rejected") {
+      console.error("Booking email notification failed:", result.reason);
+    }
+  });
+};
+
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
@@ -122,7 +209,6 @@ export default async function handler(req, res) {
       const blockouts = await client.fetch(
         `*[_type == "blockoutDate" && active != false]{ isFullDay, startDate, endDate, startTime, endTime, repeatYearly }`,
       );
-      console.log("[booking] active blockout dates fetched:", blockouts.length);
 
       if (isDateBlocked(eventDate, blockouts)) {
         return res.status(400).json({
@@ -138,9 +224,7 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log("Creating bookingRequest for:", fullName, email, eventDate);
-
-    const created = await client.create({
+    const booking = {
       _type: "bookingRequest",
       fullName,
       email,
@@ -153,9 +237,12 @@ export default async function handler(req, res) {
       message: message || "",
       status: "New",
       submittedAt: new Date().toISOString(),
-    });
+    };
 
-    console.log("bookingRequest created:", created._id);
+    const created = await client.create(booking);
+
+    await sendBookingEmails({ booking, sanityId: created._id });
+
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
     console.error("Sanity create error:", error);

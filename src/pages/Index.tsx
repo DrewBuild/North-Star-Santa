@@ -76,6 +76,10 @@ const Home = () => {
                   <img
                     src={bioPhotos[i].imageUrl}
                     alt={bioPhotos[i].alt}
+                    width={320}
+                    height={320}
+                    loading="lazy"
+                    decoding="async"
                     className="w-64 h-64 md:w-80 md:h-80 rounded-full object-cover shadow-elegant border border-border"
                     style={{ objectPosition: bioPhotos[i].position }}
                   />
@@ -102,6 +106,10 @@ const Home = () => {
                   <img
                     src={s.image.imageUrl}
                     alt={s.image.alt}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    decoding="async"
                     className="mb-6 aspect-[4/3] w-full rounded-md object-cover shadow-card"
                     style={{ objectPosition: s.image.position }}
                   />
