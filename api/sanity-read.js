@@ -112,10 +112,13 @@ const runRead = async (kind, params = {}) => {
 
   const safeParams = { ...params, limit: normalizeLimit(params.limit) };
   const query = queryFactory(safeParams);
-  console.log(`[sanity-read:${kind}] query`, query);
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[sanity-read:${kind}] query`, query);
+  }
   const data = await client.fetch(query);
-  console.log(`[sanity-read:${kind}] result count`, Array.isArray(data) ? data.length : data ? 1 : 0);
-  console.log(`[sanity-read:${kind}] result data`, data);
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[sanity-read:${kind}] result count`, Array.isArray(data) ? data.length : data ? 1 : 0);
+  }
   return { query, data };
 };
 

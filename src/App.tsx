@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import FAQHelpPopup from "./components/FAQHelpPopup";
-import SanityReadDebugPanel from "./components/SanityReadDebugPanel";
 import Layout from "./components/Layout";
 import Index from "./pages/Index.tsx";
 import Testimonials from "./pages/Testimonials.tsx";
@@ -30,7 +29,6 @@ const App = () => (
         <Route path="*" element={<NotFound />} />
       </Routes>
       <FAQHelpPopup />
-      <SanityReadDebugPanel />
     </BrowserRouter>
   </TooltipProvider>
 );

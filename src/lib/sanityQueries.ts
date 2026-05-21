@@ -60,13 +60,6 @@ export interface BookedSlot {
   status: "New" | "Contacted" | "Booked";
 }
 
-export interface SanityReadDebugSnapshot {
-  testimonialQuery: string;
-  galleryQuery: string;
-  testimonials: Testimonial[];
-  galleryPhotos: GalleryPhoto[];
-}
-
 export const approvedTestimonialsQuery = `
   *[_type == "testimonial" && approved == true && !(_id in path("drafts.**"))]
     | order(featured desc, submittedAt desc)[0...24]{
@@ -179,7 +172,6 @@ const fetchSanityQuery = async <T>(
 
   if (import.meta.env.DEV) {
     console.log(`[sanity:${label}] result count`, Array.isArray(result) ? result.length : result ? 1 : 0);
-    console.log(`[sanity:${label}] result data`, result);
   }
 
   return result;
@@ -262,22 +254,6 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
     "activeBlockouts",
   );
   return rows ?? [];
-};
-
-export const getSanityReadDebugSnapshot = async (): Promise<SanityReadDebugSnapshot> => {
-  const testimonialQuery = approvedTestimonialsQuery;
-  const galleryQuery = approvedGalleryPhotosQuery();
-  const [testimonials, galleryPhotos] = await Promise.all([
-    fetchSanityQuery<Testimonial[]>("debug-approved-testimonials", testimonialQuery, "approvedTestimonials"),
-    fetchSanityQuery<GalleryPhoto[]>("debug-approved-gallery-photos", galleryQuery, "approvedGalleryPhotos"),
-  ]);
-
-  return {
-    testimonialQuery,
-    galleryQuery,
-    testimonials,
-    galleryPhotos,
-  };
 };
 
 export const normalizeDate = (dateValue: string | Date | null | undefined): string => {
