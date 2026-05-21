@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   getApprovedTestimonials,
-  isSanityConfigured,
   type Testimonial,
-} from "@/lib/sanity";
+} from "@/lib/sanityQueries";
+import { isSanityConfigured } from "@/lib/sanityClient";
 import { realTestimonials } from "@/lib/localContent";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,

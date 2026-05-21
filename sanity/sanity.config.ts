@@ -6,8 +6,8 @@ import { schemaTypes } from "./schemaTypes";
 export default defineConfig({
   name: "north-star-santa",
   title: "North Star Santa",
-  projectId: process.env.SANITY_STUDIO_PROJECT_ID || "wme1a7n3",
-  dataset: process.env.SANITY_STUDIO_DATASET || "production",
+  projectId: "wme1a7n3",
+  dataset: "production",
   plugins: [structureTool(), visionTool()],
   schema: {
     types: schemaTypes,

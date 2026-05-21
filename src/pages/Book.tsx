@@ -24,9 +24,9 @@ import {
   getBookedSlots,
   getDefaultAvailability,
   isDateBlocked,
-  isSanityConfigured,
   isTimeBlocked,
-} from "@/lib/sanity";
+} from "@/lib/sanityQueries";
+import { isSanityConfigured } from "@/lib/sanityClient";
 
 const eventTypes = [
   "Home Visit",

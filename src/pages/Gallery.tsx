@@ -8,9 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   getApprovedGalleryPhotos,
-  isSanityConfigured,
   type GalleryPhoto,
-} from "@/lib/sanity";
+} from "@/lib/sanityQueries";
+import { isSanityConfigured } from "@/lib/sanityClient";
 import { localGalleryPhotos } from "@/lib/localContent";
 
 const Gallery = () => {

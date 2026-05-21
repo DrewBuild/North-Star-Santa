@@ -1,30 +1,45 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { cleanText, readJsonBody, sanityProjectId, sanityWriteClient } from "./_sanity";
+import { createClient } from "@sanity/client";
 
-// --- blockout helpers (mirrors src/lib/sanity.ts, kept self-contained) ---
+const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
+const dataset = process.env.VITE_SANITY_DATASET || "production";
+const apiVersion = process.env.VITE_SANITY_API_VERSION || "2025-01-01";
 
-function normalizeDate(dateValue: string | null | undefined): string {
-  if (!dateValue) return "";
-  return dateValue.slice(0, 10);
-}
+const createSanityClient = () =>
+  createClient({
+    projectId,
+    dataset,
+    apiVersion,
+    token: process.env.SANITY_WRITE_TOKEN,
+    useCdn: false,
+  });
 
-function getMonthDay(dateString: string): string {
-  const normalized = normalizeDate(dateString);
-  return normalized ? normalized.slice(5, 10) : "";
-}
+const readJsonBody = async (req) => {
+  if (req.body) return typeof req.body === "string" ? JSON.parse(req.body) : req.body;
 
-type BlockoutRecord = {
-  isFullDay: boolean;
-  startDate: string;
-  endDate: string | null;
-  startTime: string | null;
-  endTime: string | null;
-  repeatYearly: boolean;
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 };
 
-function isDateInBlockoutApi(selectedDate: string, blockout: BlockoutRecord): boolean {
+const cleanText = (value, maxLength = 500) =>
+  typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+
+const normalizeDate = (dateValue) => {
+  if (!dateValue) return "";
+  return dateValue.slice(0, 10);
+};
+
+const getMonthDay = (dateString) => {
+  const normalized = normalizeDate(dateString);
+  return normalized ? normalized.slice(5, 10) : "";
+};
+
+const isDateInBlockout = (selectedDate, blockout) => {
   const selected = normalizeDate(selectedDate);
-  if (!selected) return false;
+  if (!selected || !blockout) return false;
+
   const selectedMD = getMonthDay(selected);
   const start = normalizeDate(blockout.startDate);
   const end = normalizeDate(blockout.endDate || blockout.startDate);
@@ -40,31 +55,29 @@ function isDateInBlockoutApi(selectedDate: string, blockout: BlockoutRecord): bo
   }
 
   return selected >= start && selected <= end;
-}
+};
 
-function isDateBlockedApi(selectedDate: string, blockouts: BlockoutRecord[]): boolean {
-  if (!selectedDate || blockouts.length === 0) return false;
-  return blockouts.some((b) => b.isFullDay !== false && isDateInBlockoutApi(selectedDate, b));
-}
+const isDateBlocked = (selectedDate, blockouts) =>
+  Boolean(selectedDate && blockouts.some((blockout) => blockout.isFullDay !== false && isDateInBlockout(selectedDate, blockout)));
 
-function isTimeBlockedApi(selectedDate: string, selectedTime: string, blockouts: BlockoutRecord[]): boolean {
+const isTimeBlocked = (selectedDate, selectedTime, blockouts) => {
   const normalizedTime = selectedTime.slice(0, 5);
-  if (!selectedDate || !normalizedTime || blockouts.length === 0) return false;
+  if (!selectedDate || !normalizedTime) return false;
 
-  return blockouts.some((b) => {
-    if (b.isFullDay !== false || !isDateInBlockoutApi(selectedDate, b)) return false;
+  return blockouts.some((blockout) => {
+    if (blockout.isFullDay !== false || !isDateInBlockout(selectedDate, blockout)) return false;
 
-    const startTime = (b.startTime || "").slice(0, 5);
-    const endTime = (b.endTime || "").slice(0, 5);
+    const startTime = (blockout.startTime || "").slice(0, 5);
+    const endTime = (blockout.endTime || "").slice(0, 5);
 
     if (!startTime && !endTime) return false;
     if (startTime && !endTime) return normalizedTime === startTime;
     if (!startTime && endTime) return normalizedTime < endTime;
     return normalizedTime >= startTime && normalizedTime < endTime;
   });
-}
+};
 
-const eventTypeMap: Record<string, string> = {
+const eventTypeMap = {
   "Private Home Visit": "Home Visit",
   "Hospital Visit": "Hospital Event",
   "Community Event / Parade": "Community Event",
@@ -72,9 +85,9 @@ const eventTypeMap: Record<string, string> = {
   "Breakfast / Lunch / Dinner with Santa": "Other",
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req, res) {
   console.log("API hit: bookings");
-  console.log("Sanity project:", sanityProjectId);
+  console.log("Sanity project:", projectId);
   console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
 
   if (req.method !== "POST") {
@@ -83,13 +96,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!process.env.SANITY_WRITE_TOKEN) {
-    console.error("SANITY_WRITE_TOKEN is not set — writes will fail");
+    console.error("SANITY_WRITE_TOKEN is not set - writes will fail");
     return res.status(500).json({ success: false, error: "Server configuration error. Please contact the site owner." });
   }
 
   try {
-    const client = sanityWriteClient();
-    const body = await readJsonBody<Record<string, unknown>>(req);
+    const client = createSanityClient();
+    const body = await readJsonBody(req);
     const fullName = cleanText(body.fullName, 160);
     const email = cleanText(body.email, 160);
     const phone = cleanText(body.phone, 80);
@@ -106,16 +119,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (eventDate) {
-      const blockouts = await client.fetch<BlockoutRecord[]>(
+      const blockouts = await client.fetch(
         `*[_type == "blockoutDate" && active != false]{ isFullDay, startDate, endDate, startTime, endTime, repeatYearly }`,
       );
-      if (isDateBlockedApi(eventDate, blockouts)) {
+      console.log("[booking] active blockout dates fetched:", blockouts.length);
+
+      if (isDateBlocked(eventDate, blockouts)) {
         return res.status(400).json({
           success: false,
           error: "Santa is unavailable on this date. Please choose another date.",
         });
       }
-      if (eventTime && isTimeBlockedApi(eventDate, eventTime, blockouts)) {
+      if (eventTime && isTimeBlocked(eventDate, eventTime, blockouts)) {
         return res.status(400).json({
           success: false,
           error: "That time is unavailable. Please choose another time.",

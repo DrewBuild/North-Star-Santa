@@ -6,7 +6,7 @@ import img0960 from "@/assets/IMG_0960.jpeg";
 import img2658 from "@/assets/IMG_2658.jpeg";
 import img9520 from "@/assets/IMG_9520.jpeg";
 import img9947 from "@/assets/IMG_9947.jpeg";
-import type { GalleryPhoto, Testimonial } from "@/lib/sanity";
+import type { GalleryPhoto, Testimonial } from "@/lib/sanityQueries";
 
 export { heroSantaImg, logoImg };
 
