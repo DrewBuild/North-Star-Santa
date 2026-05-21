@@ -10,8 +10,8 @@ const Footer = () => {
       <div className="container pb-10 grid gap-8 md:grid-cols-3 items-start">
         <div>
           <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/90 p-1 shadow-card ring-1 ring-gold/30">
-              <img src={logoImg} alt="North Star Santa logo" className="h-full w-full rounded-full object-contain" />
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center md:h-14 md:w-14">
+              <img src={logoImg} alt="North Star Santa logo" className="h-full w-full object-contain drop-shadow-[0_2px_6px_hsl(0_0%_0%_/_0.35)]" />
             </span>
             <span className="font-display text-2xl font-bold text-gold">North Star Santa</span>
           </Link>

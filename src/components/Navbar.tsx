@@ -40,8 +40,8 @@ const Navbar = () => {
     >
       <div className="container flex h-16 items-center justify-between gap-3 md:h-20">
         <Link to="/" className="flex min-w-0 items-center gap-2 group">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/90 p-1 shadow-card ring-1 ring-gold/30 md:h-11 md:w-11">
-            <img src={logoImg} alt="North Star Santa logo" className="h-full w-full rounded-full object-contain drop-shadow-sm" />
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center md:h-14 md:w-14">
+            <img src={logoImg} alt="North Star Santa logo" className="h-full w-full object-contain drop-shadow-[0_2px_6px_hsl(0_0%_0%_/_0.28)]" />
           </span>
           <span className="truncate font-display text-lg font-bold text-gold tracking-wide drop-shadow-sm sm:text-xl md:text-2xl">
             North Star Santa

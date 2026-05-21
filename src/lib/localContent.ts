@@ -1,5 +1,5 @@
 import heroSantaImg from "@/assets/hero-santa.png";
-import logoImg from "@/assets/north-star-santa-logo.png";
+import logoImg from "@/assets/Santa_logo-removebg-preview.png";
 import carolinaPinesImg from "@/assets/carolina-pines-1.jpg";
 import santaWadeImg from "@/assets/santa-wade.jpg";
 import img0960 from "@/assets/IMG_0960.jpeg";
