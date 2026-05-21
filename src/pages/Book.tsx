@@ -177,8 +177,10 @@ const Book = () => {
 
     if (cannotBookSelectedTime) {
       toast({
-        title: "That time is not available",
-        description: "Please choose a date and time inside Santa's available booking window.",
+        title: isBlockedDate ? "Santa is unavailable on this date" : "That time is not available",
+        description: isBlockedDate
+          ? "Santa is unavailable on this date. Please choose another date."
+          : "Please choose a date and time inside Santa's available booking window.",
         variant: "destructive",
       });
       return;
@@ -295,13 +297,11 @@ const Book = () => {
               bookedSlots={bookedSlots}
               bookedTimesForSelectedDate={bookedTimesForSelectedDate}
               selectedTime={form.time}
-              onDateSelect={(date) =>
-                setForm((current) => ({
-                  ...current,
-                  date: date ? toDateInputValue(date) : "",
-                  time: "",
-                }))
-              }
+              onDateSelect={(date) => {
+                const dateStr = date ? toDateInputValue(date) : "";
+                if (dateStr && isDateBlocked(dateStr, blockoutDates)) return;
+                setForm((current) => ({ ...current, date: dateStr, time: "" }));
+              }}
               onTimeSelect={(time) => setForm((current) => ({ ...current, time }))}
               status={{
                 blockedReason: blockedDate?.reason ?? blockedEntry?.reason ?? null,
@@ -530,6 +530,7 @@ const BookingCalendar = ({
               row: "grid grid-cols-7 mt-2",
               cell: "aspect-square text-center text-sm p-0 relative",
               day: "h-full w-full rounded-md p-0 font-semibold hover:bg-accent hover:text-accent-foreground",
+              day_disabled: "opacity-40 pointer-events-none cursor-not-allowed",
             }}
           />
           <div className="grid grid-cols-3 gap-2 px-2 pb-2 text-xs">

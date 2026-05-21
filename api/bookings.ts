@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (eventDate) {
       const blockouts = await client.fetch<BlockoutRecord[]>(
-        `*[_type == "blockoutDate" && active == true]{ startDate, endDate, repeatYearly }`,
+        `*[_type == "blockoutDate" && active != false]{ startDate, endDate, repeatYearly }`,
       );
       if (isDateBlockedApi(eventDate, blockouts)) {
         return res.status(400).json({

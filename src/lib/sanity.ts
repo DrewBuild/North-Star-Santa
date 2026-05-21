@@ -199,8 +199,10 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
 
   // Use the live (non-CDN) client so newly created blockout dates are
   // visible immediately rather than waiting for edge cache to expire.
+  // Use active != false so documents where active was never explicitly saved
+  // (null/undefined) are still treated as active.
   const result = await sanityLiveClient.fetch<BlockoutDate[]>(`
-    *[_type == "blockoutDate" && active == true]{
+    *[_type == "blockoutDate" && active != false]{
       "id": _id,
       title,
       startDate,
