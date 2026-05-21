@@ -1,3 +1,4 @@
+import blockoutDate from "./blockoutDate";
 import bookingRequest from "./bookingRequest";
 import galleryPhoto from "./galleryPhoto";
 import siteSettings from "./siteSettings";
@@ -8,4 +9,5 @@ export const schemaTypes = [
   galleryPhoto,
   bookingRequest,
   siteSettings,
+  blockoutDate,
 ];

@@ -17,10 +17,13 @@ import { cn } from "@/lib/utils";
 import {
   type AvailabilityDay,
   type BlockedDate,
+  type BlockoutDate,
   type BookedSlot,
   type BookingSettings,
+  getActiveBlockoutDates,
   getBookedSlots,
   getDefaultAvailability,
+  isDateBlocked,
   isSanityConfigured,
 } from "@/lib/sanity";
 
@@ -81,6 +84,7 @@ const Book = () => {
   const [settings] = useState<BookingSettings | null>(null);
   const [availability] = useState<AvailabilityDay[]>(getDefaultAvailability());
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const [blockoutDates, setBlockoutDates] = useState<BlockoutDate[]>([]);
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
   const { toast } = useToast();
 
@@ -93,7 +97,17 @@ const Book = () => {
       }
     };
 
+    const loadBlockoutDates = async () => {
+      try {
+        setBlockoutDates(await getActiveBlockoutDates());
+      } catch (error) {
+        // Non-fatal: fall through and allow all dates so the form stays usable
+        console.warn("Could not load blockout dates, all dates allowed", error);
+      }
+    };
+
     loadBookedSlots();
+    loadBlockoutDates();
   }, []);
 
   const update = (k: keyof FormState) => (e: { target: { value: string } }) =>
@@ -108,10 +122,12 @@ const Book = () => {
   const selectedDate = form.date ? new Date(`${form.date}T00:00:00`) : undefined;
 
   const blockedDate = blockedDates.find((day) => day.blocked_date === form.date);
+  // Blockout dates from Sanity (ranges, repeating, full-day)
+  const blockedEntry = form.date ? blockoutDates.find((b) => isDateBlocked(form.date, [b])) : null;
   const isBeforeFirstDay = Boolean(settings?.first_business_date && form.date && form.date < settings.first_business_date);
   const isAfterLastDay = Boolean(settings?.last_business_date && form.date && form.date > settings.last_business_date);
   const isUnavailableDay = Boolean(form.date && selectedDay && !selectedDay.is_available);
-  const isBlockedDate = Boolean(blockedDate);
+  const isBlockedDate = Boolean(blockedDate) || Boolean(form.date && isDateBlocked(form.date, blockoutDates));
   const isOutsideHours = Boolean(
     form.time &&
       selectedDay?.is_available &&
@@ -261,6 +277,7 @@ const Book = () => {
             <BookingCalendar
               availability={availability}
               blockedDates={blockedDates}
+              blockoutDates={blockoutDates}
               selectedDate={selectedDate}
               selectedDay={selectedDay}
               settings={settings}
@@ -277,9 +294,10 @@ const Book = () => {
               }
               onTimeSelect={(time) => setForm((current) => ({ ...current, time }))}
               status={{
-                blockedReason: blockedDate?.reason ?? null,
+                blockedReason: blockedDate?.reason ?? blockedEntry?.reason ?? null,
                 isAfterLastDay,
                 isBeforeFirstDay,
+                isBlockedDate,
                 isOutsideHours,
                 isUnavailableDay,
                 isBookedSlot,
@@ -405,6 +423,7 @@ const BookingCalendar = ({
 }: {
   availability: AvailabilityDay[];
   blockedDates: BlockedDate[];
+  blockoutDates: BlockoutDate[];
   selectedDate: Date | undefined;
   selectedDay: AvailabilityDay | null;
   settings: BookingSettings | null;
@@ -418,6 +437,7 @@ const BookingCalendar = ({
     blockedReason: string | null;
     isAfterLastDay: boolean;
     isBeforeFirstDay: boolean;
+    isBlockedDate: boolean;
     isOutsideHours: boolean;
     isUnavailableDay: boolean;
     isBookedSlot: boolean;
@@ -426,6 +446,7 @@ const BookingCalendar = ({
   const openDays = availability.filter((day) => day.is_available);
   const blockedDateValues = blockedDates.map((day) => new Date(`${day.blocked_date}T00:00:00`));
   const unavailableDayIndexes = availability.filter((day) => !day.is_available).map((day) => day.day_of_week);
+  const isSanityDateBlocked = (date: Date) => isDateBlocked(toDateInputValue(date), blockoutDates);
 
   const allSlotsBooked = (date: Date) => {
     const day = availability.find((item) => item.day_of_week === date.getDay());
@@ -442,6 +463,7 @@ const BookingCalendar = ({
 
     return Boolean(
       blockedDates.some((blocked) => blocked.blocked_date === dateValue) ||
+        isDateBlocked(dateValue, blockoutDates) ||
         (settings?.first_business_date && dateValue < settings.first_business_date) ||
         (settings?.last_business_date && dateValue > settings.last_business_date) ||
         (day && !day.is_available) ||
@@ -476,7 +498,9 @@ const BookingCalendar = ({
             toMonth={settings?.last_business_date ? new Date(`${settings.last_business_date}T00:00:00`) : undefined}
             modifiers={{
               available: (date) => !disabledDate(date),
-              blocked: blockedDateValues,
+              blocked: (date) =>
+                blockedDateValues.some((d) => d.getTime() === date.getTime()) ||
+                isSanityDateBlocked(date),
               unavailableWeekday: (date) => unavailableDayIndexes.includes(date.getDay()),
               fullyBooked: allSlotsBooked,
             }}
@@ -554,15 +578,15 @@ const BookingCalendar = ({
         </div>
       </div>
 
-      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBeforeFirstDay && !status.isAfterLastDay && !status.isBookedSlot && (
+      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBeforeFirstDay && !status.isAfterLastDay && !status.isBookedSlot && (
         <p className="mt-4 rounded-md bg-secondary/10 px-4 py-3 text-sm font-semibold text-secondary">
           Selected: {selectedDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at {formatTime(selectedTime)} EST
         </p>
       )}
-      {(status.isUnavailableDay || status.blockedReason || status.isBeforeFirstDay || status.isAfterLastDay || status.isOutsideHours || status.isBookedSlot) && (
+      {(status.isUnavailableDay || status.isBlockedDate || status.blockedReason || status.isBeforeFirstDay || status.isAfterLastDay || status.isOutsideHours || status.isBookedSlot) && (
         <p className="mt-4 rounded-md bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">
-          {status.blockedReason
-            ? "That date is unavailable."
+          {(status.isBlockedDate || status.blockedReason)
+            ? "Santa is unavailable on this date. Please choose another date."
             : status.isBeforeFirstDay
               ? "That date is before Santa's first booking day."
               : status.isAfterLastDay

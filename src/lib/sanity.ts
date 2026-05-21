@@ -44,6 +44,19 @@ export interface SiteSettings {
   logoUrl?: string | null;
 }
 
+export interface BlockoutDate {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string | null;
+  isFullDay: boolean;
+  startTime: string | null;
+  endTime: string | null;
+  reason: string | null;
+  active: boolean;
+  repeatYearly: boolean;
+}
+
 export interface BookingSettings {
   first_business_date: string | null;
   last_business_date: string | null;
@@ -166,4 +179,48 @@ export const getBookedSlots = async () => {
       status
     }
   `);
+};
+
+export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
+  if (!isSanityConfigured) return [];
+
+  return fetchSanityQuery<BlockoutDate[]>(`
+    *[_type == "blockoutDate" && active == true]{
+      "id": _id,
+      title,
+      startDate,
+      endDate,
+      isFullDay,
+      startTime,
+      endTime,
+      reason,
+      active,
+      repeatYearly
+    }
+  `);
+};
+
+/**
+ * Returns true if the given YYYY-MM-DD date string falls within any active
+ * blockout period. Handles single days, date ranges, and yearly repeats.
+ */
+export const isDateBlocked = (date: string, blockouts: BlockoutDate[]): boolean => {
+  if (!date || blockouts.length === 0) return false;
+
+  const year = Number(date.slice(0, 4));
+
+  for (const b of blockouts) {
+    let start = b.startDate;
+    let end = b.endDate ?? b.startDate;
+
+    if (b.repeatYearly) {
+      // Swap in the year of the date being checked so Dec 24 matches every year
+      start = `${year}-${start.slice(5)}`;
+      end = `${year}-${end.slice(5)}`;
+    }
+
+    if (date >= start && date <= end) return true;
+  }
+
+  return false;
 };
