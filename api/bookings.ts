@@ -13,6 +13,14 @@ interface BookingPayload {
   message?: string;
 }
 
+const eventTypeMap: Record<string, string> = {
+  "Private Home Visit": "Home Visit",
+  "Hospital Visit": "Hospital Event",
+  "Community Event / Parade": "Community Event",
+  "HOA / Neighborhood Event": "Community Event",
+  "Breakfast / Lunch / Dinner with Santa": "Other",
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -24,7 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const fullName = cleanText(body.fullName, 160);
     const email = cleanText(body.email, 160);
     const phone = cleanText(body.phone, 80);
-    const eventType = cleanText(body.eventType, 120);
+    const rawEventType = cleanText(body.eventType, 120);
+    const eventType = eventTypeMap[rawEventType] || rawEventType;
     const eventDate = cleanText(body.eventDate, 20);
     const eventTime = cleanText(body.eventTime, 20);
     const eventLocation = cleanText(body.eventLocation, 1000);

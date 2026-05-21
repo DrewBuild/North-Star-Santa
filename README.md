@@ -23,7 +23,7 @@ npm run dev
 Required app environment variables:
 
 ```txt
-VITE_SANITY_PROJECT_ID=your_sanity_project_id
+VITE_SANITY_PROJECT_ID=wme1a7n3
 VITE_SANITY_DATASET=production
 VITE_SANITY_API_VERSION=2025-01-01
 VITE_SANITY_STUDIO_URL=https://your-studio-host.sanity.studio
@@ -34,12 +34,18 @@ Only the `VITE_` values are exposed to browser code. `SANITY_WRITE_TOKEN` is use
 
 ## Sanity Studio
 
-The Studio lives in `studio/` so the existing Vite app does not need to become a Next.js app or a Sanity Studio app.
+The Studio lives in `sanity/` so the existing Vite app does not need to become a Next.js app or a Sanity Studio app.
 
 ```bash
-cd studio
+cd sanity
 npm install
 SANITY_STUDIO_PROJECT_ID=your_sanity_project_id SANITY_STUDIO_DATASET=production npm run dev
+```
+
+You can also run it from the project root:
+
+```bash
+npm run studio
 ```
 
 Schemas included:

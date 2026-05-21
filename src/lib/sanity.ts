@@ -1,8 +1,17 @@
+import { createClient } from "@sanity/client";
+
 const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
 const dataset = import.meta.env.VITE_SANITY_DATASET;
 const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || "2025-01-01";
 
 export const isSanityConfigured = Boolean(projectId && dataset);
+
+export const sanityClient = createClient({
+  projectId: projectId || "wme1a7n3",
+  dataset: dataset || "production",
+  apiVersion,
+  useCdn: true,
+});
 
 export interface Testimonial {
   id: string;
@@ -24,6 +33,15 @@ export interface GalleryPhoto {
   submittedAt?: string;
   imageFit?: "cover" | "contain";
   imagePosition?: string;
+}
+
+export interface SiteSettings {
+  siteName?: string | null;
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  contactEmail?: string | null;
+  phone?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface BookingSettings {
@@ -62,25 +80,12 @@ const defaultAvailability: AvailabilityDay[] = [
 
 export const getDefaultAvailability = () => defaultAvailability;
 
-const getQueryUrl = (query: string) => {
-  if (!projectId || !dataset) {
+const fetchSanityQuery = async <T>(query: string): Promise<T> => {
+  if (!isSanityConfigured) {
     throw new Error("Sanity is not configured.");
   }
 
-  const url = new URL(`https://${projectId}.api.sanity.io/${apiVersion}/data/query/${dataset}`);
-  url.searchParams.set("query", query);
-  return url.toString();
-};
-
-const fetchSanityQuery = async <T>(query: string): Promise<T> => {
-  const response = await fetch(getQueryUrl(query));
-
-  if (!response.ok) {
-    throw new Error(`Sanity read failed with status ${response.status}.`);
-  }
-
-  const payload = (await response.json()) as { result: T };
-  return payload.result;
+  return sanityClient.fetch<T>(query);
 };
 
 export const getApprovedTestimonials = async () => {
@@ -115,6 +120,40 @@ export const getApprovedGalleryPhotos = async (limit = 24) => {
         submittedAt
       }
   `);
+};
+
+export const getFeaturedTestimonials = async () => {
+  if (!isSanityConfigured) return [];
+
+  return fetchSanityQuery<Testimonial[]>(`
+    *[_type == "testimonial" && approved == true && featured == true]
+      | order(submittedAt desc)[0...6]{
+        "id": _id,
+        name,
+        reviewText,
+        organization,
+        location,
+        featured,
+        submittedAt
+      }
+  `);
+};
+
+export const getSiteSettings = async () => {
+  if (!isSanityConfigured) return null;
+
+  const results = await fetchSanityQuery<SiteSettings[]>(`
+    *[_type == "siteSettings"][0]{
+      siteName,
+      heroTitle,
+      heroSubtitle,
+      contactEmail,
+      phone,
+      "logoUrl": logo.asset->url
+    }
+  `);
+
+  return results ?? null;
 };
 
 export const getBookedSlots = async () => {

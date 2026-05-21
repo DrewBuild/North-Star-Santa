@@ -25,13 +25,14 @@ import {
 } from "@/lib/sanity";
 
 const eventTypes = [
-  "Private Home Visit",
+  "Home Visit",
   "Corporate Party",
   "School Event",
-  "Hospital Visit",
-  "Community Event / Parade",
-  "HOA / Neighborhood Event",
-  "Breakfast / Lunch / Dinner with Santa",
+  "Hospital Event",
+  "Community Event",
+  "Breakfast with Santa",
+  "Lunch with Santa",
+  "Dinner with Santa",
   "Other",
 ];
 
@@ -160,7 +161,7 @@ const Book = () => {
     setSaving(true);
 
     try {
-      const response = await fetch("/api/submit-booking", {
+      const response = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

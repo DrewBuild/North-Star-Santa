@@ -41,7 +41,7 @@ const Testimonials = () => {
           (testimonial) => !realTestimonials.some((local) => local.name === testimonial.name),
         );
 
-        setTestimonials([...realTestimonials, ...extraTestimonials]);
+        setTestimonials(testimonialRows.length > 0 ? testimonialRows : realTestimonials);
         setPhotos(photoRows.length > 0 ? photoRows : localGalleryPhotos);
       } catch (error) {
         toast({
@@ -142,7 +142,7 @@ const ShareForm = () => {
     setSaving(true);
 
     try {
-      const testimonialResponse = await fetch("/api/submit-testimonial", {
+      const testimonialResponse = await fetch("/api/testimonials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,7 +161,7 @@ const ShareForm = () => {
 
       for (const file of photoFiles) {
         const imageDataUrl = await fileToDataUrl(file);
-        const photoResponse = await fetch("/api/submit-gallery-photo", {
+        const photoResponse = await fetch("/api/photos", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -204,7 +204,7 @@ const ShareForm = () => {
         {submitted ? (
           <div className="bg-card border border-border rounded-lg p-8 text-center shadow-card">
             <h3 className="font-display text-2xl text-secondary mb-2">Thank you! 🎄</h3>
-            <p className="text-foreground/80">Your testimonial has been submitted and will appear here once approved.</p>
+            <p className="text-foreground/80">Your testimonial has been submitted for review.</p>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="bg-card border border-border rounded-lg p-6 md:p-8 shadow-card space-y-4">
