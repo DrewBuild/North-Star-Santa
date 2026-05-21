@@ -9,6 +9,42 @@ const client = createClient({
   useCdn: false,
 });
 
+// --- blockout helpers (mirrors src/lib/sanity.ts, kept self-contained) ---
+
+function normalizeDate(dateValue: string | null | undefined): string {
+  if (!dateValue) return "";
+  return dateValue.slice(0, 10);
+}
+
+function getMonthDay(dateString: string): string {
+  const normalized = normalizeDate(dateString);
+  return normalized ? normalized.slice(5, 10) : "";
+}
+
+type BlockoutRecord = {
+  startDate: string;
+  endDate: string | null;
+  repeatYearly: boolean;
+};
+
+function isDateBlockedApi(selectedDate: string, blockouts: BlockoutRecord[]): boolean {
+  const selected = normalizeDate(selectedDate);
+  if (!selected || blockouts.length === 0) return false;
+  const selectedMD = getMonthDay(selected);
+  return blockouts.some((b) => {
+    const start = normalizeDate(b.startDate);
+    const end = normalizeDate(b.endDate || b.startDate);
+    if (!start) return false;
+    if (b.repeatYearly) {
+      const startMD = getMonthDay(start);
+      const endMD = getMonthDay(end);
+      if (!endMD || startMD === endMD) return selectedMD === startMD;
+      return selectedMD >= startMD && selectedMD <= endMD;
+    }
+    return selected >= start && selected <= end;
+  });
+}
+
 const clean = (value: unknown, max = 500) =>
   typeof value === "string" ? value.trim().slice(0, max) : "";
 
@@ -41,6 +77,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!fullName || !email) {
       return res.status(400).json({ success: false, error: "Full name and email are required." });
+    }
+
+    if (eventDate) {
+      const blockouts = await client.fetch<BlockoutRecord[]>(
+        `*[_type == "blockoutDate" && active == true]{ startDate, endDate, repeatYearly }`,
+      );
+      if (isDateBlockedApi(eventDate, blockouts)) {
+        return res.status(400).json({
+          success: false,
+          error: "Santa is unavailable on this date. Please choose another date.",
+        });
+      }
     }
 
     const created = await client.create({

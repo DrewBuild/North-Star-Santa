@@ -99,16 +99,24 @@ const Book = () => {
 
     const loadBlockoutDates = async () => {
       try {
-        setBlockoutDates(await getActiveBlockoutDates());
+        const dates = await getActiveBlockoutDates();
+        console.log("[blockout] fetched blockout dates:", dates);
+        setBlockoutDates(dates);
       } catch (error) {
         // Non-fatal: fall through and allow all dates so the form stays usable
-        console.warn("Could not load blockout dates, all dates allowed", error);
+        console.warn("[blockout] Could not load blockout dates, all dates allowed", error);
       }
     };
 
     loadBookedSlots();
     loadBlockoutDates();
   }, []);
+
+  useEffect(() => {
+    if (!form.date) return;
+    console.log("[blockout] selected event date:", form.date);
+    console.log("[blockout] isDateBlocked result:", isDateBlocked(form.date, blockoutDates));
+  }, [form.date, blockoutDates]);
 
   const update = (k: keyof FormState) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));

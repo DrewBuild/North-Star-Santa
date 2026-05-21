@@ -4,13 +4,26 @@ const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
 const dataset = import.meta.env.VITE_SANITY_DATASET;
 const apiVersion = import.meta.env.VITE_SANITY_API_VERSION || "2025-01-01";
 
-export const isSanityConfigured = Boolean(projectId && dataset);
+// Use hardcoded fallbacks so isSanityConfigured is accurate in all environments
+const effectiveProjectId = projectId || "wme1a7n3";
+const effectiveDataset = dataset || "production";
+
+export const isSanityConfigured = Boolean(effectiveProjectId && effectiveDataset);
 
 export const sanityClient = createClient({
-  projectId: projectId || "wme1a7n3",
-  dataset: dataset || "production",
+  projectId: effectiveProjectId,
+  dataset: effectiveDataset,
   apiVersion,
   useCdn: true,
+});
+
+// Bypass CDN for availability data so newly created blockout dates
+// are visible immediately without waiting for cache to expire.
+const sanityLiveClient = createClient({
+  projectId: effectiveProjectId,
+  dataset: effectiveDataset,
+  apiVersion,
+  useCdn: false,
 });
 
 export interface Testimonial {
@@ -184,7 +197,9 @@ export const getBookedSlots = async () => {
 export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
   if (!isSanityConfigured) return [];
 
-  return fetchSanityQuery<BlockoutDate[]>(`
+  // Use the live (non-CDN) client so newly created blockout dates are
+  // visible immediately rather than waiting for edge cache to expire.
+  const result = await sanityLiveClient.fetch<BlockoutDate[]>(`
     *[_type == "blockoutDate" && active == true]{
       "id": _id,
       title,
@@ -198,32 +213,44 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
       repeatYearly
     }
   `);
+  return result ?? [];
 };
 
-/**
- * Returns true if the given YYYY-MM-DD date string falls within any active
- * blockout period. Handles single days, date ranges, and yearly repeats.
- */
-export const isDateBlocked = (date: string, blockouts: BlockoutDate[] | undefined | null): boolean => {
-  if (!date || !blockouts || blockouts.length === 0) return false;
+export const normalizeDate = (dateValue: string | Date | null | undefined): string => {
+  if (!dateValue) return "";
+  if (typeof dateValue === "string") return dateValue.slice(0, 10);
+  return dateValue.toISOString().slice(0, 10);
+};
 
-  const year = Number(date.slice(0, 4));
+export const getMonthDay = (dateString: string): string => {
+  const normalized = normalizeDate(dateString);
+  return normalized ? normalized.slice(5, 10) : "";
+};
 
-  for (const b of blockouts) {
-    // Skip malformed records that are missing a startDate
-    if (!b?.startDate) continue;
+export const isDateBlocked = (
+  selectedDate: string | null | undefined,
+  blockouts: BlockoutDate[] | undefined | null = [],
+): boolean => {
+  const selected = normalizeDate(selectedDate);
+  if (!selected || !blockouts || blockouts.length === 0) return false;
 
-    let start = b.startDate;
-    let end = b.endDate ?? b.startDate;
+  const selectedMonthDay = getMonthDay(selected);
 
-    if (b.repeatYearly) {
-      // Swap in the year of the date being checked so Dec 24 matches every year
-      start = `${year}-${start.slice(5)}`;
-      end = `${year}-${end.slice(5)}`;
+  return blockouts.some((blockout) => {
+    if (!blockout || blockout.active === false) return false;
+
+    const start = normalizeDate(blockout.startDate);
+    const end = normalizeDate(blockout.endDate || blockout.startDate);
+
+    if (!start) return false;
+
+    if (blockout.repeatYearly) {
+      const startMD = getMonthDay(start);
+      const endMD = getMonthDay(end);
+      if (!endMD || startMD === endMD) return selectedMonthDay === startMD;
+      return selectedMonthDay >= startMD && selectedMonthDay <= endMD;
     }
 
-    if (date >= start && date <= end) return true;
-  }
-
-  return false;
+    return selected >= start && selected <= end;
+  });
 };
