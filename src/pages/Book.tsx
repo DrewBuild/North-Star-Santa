@@ -89,6 +89,8 @@ const Book = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("[sanity] project ID:", import.meta.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
+
     const loadBookedSlots = async () => {
       try {
         setBookedSlots(await getBookedSlots());
