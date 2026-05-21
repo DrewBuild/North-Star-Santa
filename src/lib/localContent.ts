@@ -86,13 +86,13 @@ const servicePhotoData = [
   },
   {
     title: "Corporate Parties",
-    imageUrl: img2658,
+    imageUrl: img9520,
     alt: "North Star Santa ready for a polished corporate Christmas event",
     position: "center top",
   },
   {
     title: "School Events",
-    imageUrl: img9520,
+    imageUrl: img2658,
     alt: "North Star Santa at a cheerful school event",
     position: "center top",
   },
@@ -187,6 +187,29 @@ export const fallbackServices: Service[] = [
     active: true,
   },
 ];
+
+export const withRequestedServicePhotoSwap = (services: Service[]): Service[] =>
+  services.map((service) => {
+    if (service.title === "Corporate Parties") {
+      return {
+        ...service,
+        imageUrl: servicePhotoData[1].imageUrl,
+        imageAlt: service.imageAlt || servicePhotoData[1].alt,
+        imagePosition: service.imagePosition || servicePhotoData[1].position,
+      };
+    }
+
+    if (service.title === "School Events") {
+      return {
+        ...service,
+        imageUrl: servicePhotoData[2].imageUrl,
+        imageAlt: service.imageAlt || servicePhotoData[2].alt,
+        imagePosition: service.imagePosition || servicePhotoData[2].position,
+      };
+    }
+
+    return service;
+  });
 
 export const fallbackHelpfulHints: HelpfulHint[] = [
   { id: "fallback-hint-comfortable", title: "Keep It Comfortable", description: "Maintain room temperature at or below 68°F to ensure everyone's comfort during the visit.", order: 1, active: true },

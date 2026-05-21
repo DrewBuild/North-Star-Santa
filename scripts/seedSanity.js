@@ -137,7 +137,7 @@ const services = [
     category: "Corporate Parties",
     order: 2,
     featured: true,
-    filePath: "src/assets/IMG_2658.jpeg",
+    filePath: "src/assets/IMG_9520.jpeg",
   },
   {
     _id: "starter-service-school-events",
@@ -148,7 +148,7 @@ const services = [
     category: "School Events",
     order: 3,
     featured: true,
-    filePath: "src/assets/IMG_9520.jpeg",
+    filePath: "src/assets/IMG_2658.jpeg",
   },
   {
     _id: "starter-service-hospital-events",

@@ -5,7 +5,7 @@ import Snow from "@/components/Snow";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
-import { bioPhotos, fallbackServices, heroSantaImg } from "@/lib/localContent";
+import { bioPhotos, fallbackServices, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
 
 const bioBlocks = [
@@ -24,7 +24,7 @@ const bioBlocks = [
 ];
 
 const serviceIcons = [HomeIcon, Building2, Heart];
-const fallbackFeaturedServices = fallbackServices.slice(0, 3);
+const fallbackFeaturedServices = withRequestedServicePhotoSwap(fallbackServices.slice(0, 3));
 
 const Home = () => {
   const [services, setServices] = useState<Service[]>(fallbackFeaturedServices);
@@ -33,7 +33,7 @@ const Home = () => {
     const loadServices = async () => {
       try {
         const rows = await getFeaturedServices();
-        setServices(rows.length > 0 ? rows : fallbackFeaturedServices);
+        setServices(rows.length > 0 ? withRequestedServicePhotoSwap(rows) : fallbackFeaturedServices);
       } catch {
         setServices(fallbackFeaturedServices);
       }
@@ -74,38 +74,40 @@ const Home = () => {
       </section>
 
       {/* Bio */}
-      <section className="container py-20 md:py-28 space-y-16 md:space-y-24">
-        {bioBlocks.map((b, i) => {
-          const flipped = i % 2 === 1;
-          return (
-            <Reveal key={b.label}>
-              <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${flipped ? "md:[&>*:first-child]:order-2" : ""}`}>
-                <div>
-                  <h2 className="font-display text-3xl md:text-4xl text-secondary mb-5">
-                    {b.label}
-                  </h2>
-                  <p className="text-lg leading-relaxed text-foreground/85">{b.text}</p>
+      <section className="bg-festive-cream">
+        <div className="container py-20 md:py-28 space-y-16 md:space-y-24">
+          {bioBlocks.map((b, i) => {
+            const flipped = i % 2 === 1;
+            return (
+              <Reveal key={b.label}>
+                <div className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center ${flipped ? "md:[&>*:first-child]:order-2" : ""}`}>
+                  <div>
+                    <h2 className="font-display text-3xl md:text-4xl text-secondary mb-5">
+                      {b.label}
+                    </h2>
+                    <p className="text-lg leading-relaxed text-foreground/85">{b.text}</p>
+                  </div>
+                  <div className="flex justify-center">
+                    <img
+                      src={bioPhotos[i].imageUrl}
+                      alt={bioPhotos[i].alt}
+                      width={320}
+                      height={320}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-64 h-64 md:w-80 md:h-80 rounded-full object-cover shadow-elegant border border-border"
+                      style={{ objectPosition: bioPhotos[i].position }}
+                    />
+                  </div>
                 </div>
-                <div className="flex justify-center">
-                  <img
-                    src={bioPhotos[i].imageUrl}
-                    alt={bioPhotos[i].alt}
-                    width={320}
-                    height={320}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-64 h-64 md:w-80 md:h-80 rounded-full object-cover shadow-elegant border border-border"
-                    style={{ objectPosition: bioPhotos[i].position }}
-                  />
-                </div>
-              </div>
-            </Reveal>
-          );
-        })}
+              </Reveal>
+            );
+          })}
+        </div>
       </section>
 
       {/* Services Teaser */}
-      <section className="bg-muted/60 py-20 md:py-24">
+      <section className="bg-festive-red-gold py-20 md:py-24">
         <div className="container">
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-12">

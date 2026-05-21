@@ -53,13 +53,13 @@ const Gallery = () => {
         {loading ? (
           <p className="text-center text-muted-foreground">Loading gallery...</p>
         ) : photos.length > 0 ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:gap-6">
             {photos.map((photo, i) => (
               <Reveal key={photo.id} delay={(i % 6) * 60}>
                 <article className="h-full overflow-hidden rounded-lg border border-border bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-elegant">
                   <img
                     src={photo.imageUrl}
-                    alt={photo.title || photo.caption || "North Star Santa gallery photo"}
+                    alt="North Star Santa gallery photo"
                     width={900}
                     height={675}
                     loading="lazy"
@@ -70,13 +70,6 @@ const Gallery = () => {
                       objectPosition: photo.imagePosition || "center top",
                     }}
                   />
-                  {(photo.title || photo.caption || photo.submittedBy) && (
-                    <div className="space-y-1 p-4">
-                      {photo.title && <h2 className="font-display text-xl text-secondary">{photo.title}</h2>}
-                      {photo.caption && <p className="text-sm text-foreground/80">{photo.caption}</p>}
-                      {photo.submittedBy && <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Shared by {photo.submittedBy}</p>}
-                    </div>
-                  )}
                 </article>
               </Reveal>
             ))}

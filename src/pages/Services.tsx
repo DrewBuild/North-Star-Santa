@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
-import { fallbackServices } from "@/lib/localContent";
+import { fallbackServices, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getActiveServices, type Service } from "@/lib/sanityQueries";
 
 const Services = () => {
-  const [services, setServices] = useState<Service[]>(fallbackServices);
+  const [services, setServices] = useState<Service[]>(withRequestedServicePhotoSwap(fallbackServices));
 
   useEffect(() => {
     const loadServices = async () => {
       try {
         const rows = await getActiveServices();
-        setServices(rows.length > 0 ? rows : fallbackServices);
+        setServices(rows.length > 0 ? withRequestedServicePhotoSwap(rows) : withRequestedServicePhotoSwap(fallbackServices));
       } catch {
-        setServices(fallbackServices);
+        setServices(withRequestedServicePhotoSwap(fallbackServices));
       }
     };
 

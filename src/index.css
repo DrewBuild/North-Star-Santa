@@ -4,7 +4,7 @@
 
 /* North Star Santa Design System
    All colors MUST be HSL.
-   Palette: deep red, forest green, antique gold, cream, charcoal.
+   Palette: bright Christmas red, forest green, vivid gold, cream, charcoal.
 */
 
 @layer base {
@@ -18,19 +18,19 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 11%;
 
-    --primary: 0 68% 42%;              /* deep christmas red #B22222 */
+    --primary: 0 74% 48%;              /* brighter Christmas red */
     --primary-foreground: 39 47% 96%;
 
     --secondary: 113 37% 25%;          /* forest green #2D5A27 */
     --secondary-foreground: 39 47% 96%;
 
-    --gold: 44 53% 54%;                /* antique gold #C9A84C */
+    --gold: 43 88% 62%;                /* bright festive gold */
     --gold-foreground: 0 0% 11%;
 
-    --muted: 39 30% 92%;
+    --muted: 42 48% 91%;
     --muted-foreground: 0 0% 35%;
 
-    --accent: 44 53% 54%;
+    --accent: 43 88% 62%;
     --accent-foreground: 0 0% 11%;
 
     --destructive: 0 68% 42%;
@@ -43,14 +43,14 @@
     --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(0 68% 22% / 0.85), hsl(113 37% 15% / 0.85));
-    --gradient-banner: linear-gradient(90deg, hsl(0 68% 38%), hsl(0 68% 48%));
-    --gradient-gold: linear-gradient(135deg, hsl(44 60% 60%), hsl(44 53% 44%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 76% 28% / 0.82), hsl(113 42% 17% / 0.78));
+    --gradient-banner: linear-gradient(90deg, hsl(0 75% 42%), hsl(0 78% 52%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 72%), hsl(42 86% 52%));
 
     /* Shadows */
     --shadow-elegant: 0 12px 40px -12px hsl(0 68% 20% / 0.25);
     --shadow-card: 0 4px 16px -6px hsl(0 0% 0% / 0.08);
-    --shadow-gold: 0 0 28px hsl(44 53% 54% / 0.45);
+    --shadow-gold: 0 0 28px hsl(43 88% 62% / 0.48);
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -96,8 +96,21 @@
     animation: pulse-gold 2.4s ease-in-out infinite;
   }
   @keyframes pulse-gold {
-    0%, 100% { box-shadow: 0 0 0 0 hsl(44 53% 54% / 0.55); }
-    50% { box-shadow: 0 0 0 12px hsl(44 53% 54% / 0); }
+    0%, 100% { box-shadow: 0 0 0 0 hsl(43 88% 62% / 0.55); }
+    50% { box-shadow: 0 0 0 12px hsl(43 88% 62% / 0); }
+  }
+
+  .bg-festive-cream {
+    background:
+      radial-gradient(circle at top left, hsl(43 88% 62% / 0.2), transparent 32rem),
+      linear-gradient(180deg, hsl(39 58% 97%), hsl(40 50% 94%));
+  }
+
+  .bg-festive-red-gold {
+    background:
+      radial-gradient(circle at 18% 8%, hsl(43 92% 66% / 0.22), transparent 24rem),
+      linear-gradient(180deg, hsl(0 72% 46% / 0.08), hsl(43 88% 62% / 0.14)),
+      hsl(var(--background));
   }
 
   .reveal {
