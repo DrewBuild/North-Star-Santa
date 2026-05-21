@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { cleanText, parseDataUrlImage, readJsonBody, sanityWriteClient } from "./_sanity";
+import { cleanText, parseDataUrlImage, readJsonBody, sanityWriteClient } from "./_sanity.js";
 
 interface GalleryPhotoPayload {
   title?: string;

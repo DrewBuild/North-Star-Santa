@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { cleanText, readJsonBody, sanityWriteClient } from "./_sanity";
+import { cleanText, readJsonBody, sanityWriteClient } from "./_sanity.js";
 
 interface TestimonialPayload {
   name?: string;
