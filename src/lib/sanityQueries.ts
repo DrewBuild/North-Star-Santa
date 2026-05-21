@@ -62,7 +62,7 @@ export interface BookedSlot {
 
 export const approvedTestimonialsQuery = `
   *[_type == "testimonial" && approved == true && !(_id in path("drafts.**"))]
-    | order(featured desc, submittedAt desc)[0...24]{
+    | order(featured desc, submittedAt desc){
       "id": _id,
       "_id": _id,
       "_type": _type,
@@ -76,9 +76,9 @@ export const approvedTestimonialsQuery = `
     }
 `;
 
-export const approvedGalleryPhotosQuery = (limit = 24) => `
+export const approvedGalleryPhotosQuery = () => `
   *[_type == "galleryPhoto" && approved == true && defined(image.asset) && !(_id in path("drafts.**"))]
-    | order(featured desc, submittedAt desc)[0...${limit}]{
+    | order(featured desc, submittedAt desc){
       "id": _id,
       "_id": _id,
       "_type": _type,
@@ -204,14 +204,13 @@ export const getApprovedTestimonials = async () => {
   return rows;
 };
 
-export const getApprovedGalleryPhotos = async (limit = 24) => {
+export const getApprovedGalleryPhotos = async () => {
   if (!isSanityConfigured) return [];
 
   const rows = await fetchSanityQuery<GalleryPhoto[]>(
     "approved-gallery-photos",
-    approvedGalleryPhotosQuery(limit),
+    approvedGalleryPhotosQuery(),
     "approvedGalleryPhotos",
-    { limit },
   );
   return rows;
 };

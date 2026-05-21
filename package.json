@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "studio": "cd sanity && npx sanity dev",
     "studio:build": "cd sanity && npm run build",
+    "seed:sanity": "node scripts/seedSanity.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

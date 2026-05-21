@@ -14,7 +14,7 @@ const client = createClient({
 const queries = {
   approvedTestimonials: () => `
     *[_type == "testimonial" && approved == true && !(_id in path("drafts.**"))]
-      | order(featured desc, submittedAt desc)[0...24]{
+      | order(featured desc, submittedAt desc){
         "id": _id,
         "_id": _id,
         "_type": _type,
@@ -27,9 +27,9 @@ const queries = {
         submittedAt
       }
   `,
-  approvedGalleryPhotos: ({ limit = 24 } = {}) => `
+  approvedGalleryPhotos: () => `
     *[_type == "galleryPhoto" && approved == true && defined(image.asset) && !(_id in path("drafts.**"))]
-      | order(featured desc, submittedAt desc)[0...${limit}]{
+      | order(featured desc, submittedAt desc){
         "id": _id,
         "_id": _id,
         "_type": _type,
@@ -97,12 +97,6 @@ const readJsonBody = async (req) => {
   return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 };
 
-const normalizeLimit = (value) => {
-  const limit = Number(value || 24);
-  if (!Number.isFinite(limit)) return 24;
-  return Math.max(1, Math.min(60, Math.floor(limit)));
-};
-
 const runRead = async (kind, params = {}) => {
   const queryFactory = queries[kind];
   if (!queryFactory) {
@@ -110,8 +104,7 @@ const runRead = async (kind, params = {}) => {
     throw new Error(`Unsupported Sanity read kind "${kind}". Allowed: ${allowed}`);
   }
 
-  const safeParams = { ...params, limit: normalizeLimit(params.limit) };
-  const query = queryFactory(safeParams);
+  const query = queryFactory(params);
   if (process.env.NODE_ENV === "development") {
     console.log(`[sanity-read:${kind}] query`, query);
   }
