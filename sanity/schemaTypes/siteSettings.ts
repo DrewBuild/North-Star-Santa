@@ -32,6 +32,7 @@ export default defineType({
       name: "contactEmail",
       title: "Contact Email",
       type: "string",
+      validation: (Rule) => Rule.email(),
     }),
     defineField({
       name: "phone",

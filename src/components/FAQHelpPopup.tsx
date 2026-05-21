@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { HelpCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { getSiteSettings } from "@/lib/sanityQueries";
 
-const CLIENT_EMAIL = "info@northstarsanta.com";
+const FALLBACK_CONTACT_EMAIL = "support@northstarsanta.com";
 
 const faqs = [
   {
@@ -35,11 +37,30 @@ const faqs = [
   {
     question: "How do I contact Santa directly?",
     answer: "You can contact North Star Santa directly through email for booking questions or special requests.",
-    email: CLIENT_EMAIL,
+    hasContactEmail: true,
   },
 ];
 
 const FAQHelpPopup = () => {
+  const [contactEmail, setContactEmail] = useState(FALLBACK_CONTACT_EMAIL);
+
+  useEffect(() => {
+    const loadContactEmail = async () => {
+      try {
+        const settings = await getSiteSettings();
+        const nextEmail = settings?.contactEmail?.trim();
+
+        if (nextEmail) {
+          setContactEmail(nextEmail);
+        }
+      } catch {
+        setContactEmail(FALLBACK_CONTACT_EMAIL);
+      }
+    };
+
+    loadContactEmail();
+  }, []);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -82,14 +103,14 @@ const FAQHelpPopup = () => {
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-foreground/80">
                 {item.answer}
-                {"email" in item && item.email && (
+                {"hasContactEmail" in item && item.hasContactEmail && (
                   <>
                     {" "}
                     <a
-                      href={`mailto:${item.email}`}
+                      href={`mailto:${contactEmail}`}
                       className="font-semibold text-primary underline underline-offset-4 hover:text-secondary"
                     >
-                      {item.email}
+                      {contactEmail}
                     </a>
                   </>
                 )}
