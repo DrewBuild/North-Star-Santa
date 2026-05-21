@@ -1,17 +1,16 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { cleanText, readJsonBody, sanityWriteClient } from "./_sanity.js";
+import { createClient } from "@sanity/client";
 
-interface BookingPayload {
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  eventType?: string;
-  eventDate?: string;
-  eventTime?: string;
-  eventLocation?: string;
-  numberOfGuests?: number;
-  message?: string;
-}
+const client = createClient({
+  projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
+  dataset: process.env.VITE_SANITY_DATASET || "production",
+  apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
+  token: process.env.SANITY_WRITE_TOKEN,
+  useCdn: false,
+});
+
+const clean = (value: unknown, max = 500) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
 
 const eventTypeMap: Record<string, string> = {
   "Private Home Visit": "Home Visit",
@@ -24,45 +23,44 @@ const eventTypeMap: Record<string, string> = {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
   try {
-    const body = await readJsonBody<BookingPayload>(req);
-    const fullName = cleanText(body.fullName, 160);
-    const email = cleanText(body.email, 160);
-    const phone = cleanText(body.phone, 80);
-    const rawEventType = cleanText(body.eventType, 120);
-    const eventType = eventTypeMap[rawEventType] || rawEventType;
-    const eventDate = cleanText(body.eventDate, 20);
-    const eventTime = cleanText(body.eventTime, 20);
-    const eventLocation = cleanText(body.eventLocation, 1000);
-    const message = cleanText(body.message, 2000);
+    const body = req.body ?? {};
+    const fullName = clean(body.fullName, 160);
+    const email = clean(body.email, 160);
+    const phone = clean(body.phone, 80);
+    const rawEventType = clean(body.eventType, 120);
+    const eventType = eventTypeMap[rawEventType] || rawEventType || "Other";
+    const eventDate = clean(body.eventDate, 20);
+    const eventTime = clean(body.eventTime, 20);
+    const eventLocation = clean(body.eventLocation, 1000);
+    const message = clean(body.message, 2000);
     const numberOfGuests = Number(body.numberOfGuests || 0);
 
-    if (!fullName || !email || !phone || !eventType || !eventDate || !eventTime || !eventLocation) {
-      return res.status(400).json({ error: "Please complete the required booking fields." });
+    if (!fullName || !email) {
+      return res.status(400).json({ success: false, error: "Full name and email are required." });
     }
 
-    const doc = await sanityWriteClient().create({
+    const created = await client.create({
       _type: "bookingRequest",
       fullName,
       email,
-      phone,
+      phone: phone || "",
       eventType,
-      eventDate,
-      eventTime,
-      eventLocation,
-      numberOfGuests: Number.isFinite(numberOfGuests) ? numberOfGuests : undefined,
-      message: message || undefined,
+      eventDate: eventDate || null,
+      eventTime: eventTime || "",
+      eventLocation: eventLocation || "",
+      numberOfGuests: Number.isFinite(numberOfGuests) && numberOfGuests > 0 ? numberOfGuests : undefined,
+      message: message || "",
       status: "New",
       submittedAt: new Date().toISOString(),
     });
 
-    return res.status(200).json({ id: doc._id });
+    return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : "Could not send booking request.",
-    });
+    console.error("Booking API error:", error);
+    return res.status(500).json({ success: false, error: "Could not send booking request." });
   }
 }

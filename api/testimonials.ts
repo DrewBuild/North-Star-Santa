@@ -1,33 +1,36 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { cleanText, readJsonBody, sanityWriteClient } from "./_sanity.js";
+import { createClient } from "@sanity/client";
 
-interface TestimonialPayload {
-  name?: string;
-  email?: string;
-  reviewText?: string;
-  organization?: string;
-  location?: string;
-}
+const client = createClient({
+  projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
+  dataset: process.env.VITE_SANITY_DATASET || "production",
+  apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
+  token: process.env.SANITY_WRITE_TOKEN,
+  useCdn: false,
+});
+
+const clean = (value: unknown, max = 500) =>
+  typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ success: false, error: "Method not allowed" });
   }
 
   try {
-    const body = await readJsonBody<TestimonialPayload>(req);
-    const name = cleanText(body.name, 120);
-    const email = cleanText(body.email, 160);
-    const reviewText = cleanText(body.reviewText, 2000);
-    const organization = cleanText(body.organization, 160);
-    const location = cleanText(body.location, 160);
+    const body = req.body ?? {};
+    const name = clean(body.name, 120);
+    const email = clean(body.email, 160);
+    const reviewText = clean(body.reviewText, 2000);
+    const organization = clean(body.organization, 160);
+    const location = clean(body.location, 160);
 
     if (!name || !reviewText) {
-      return res.status(400).json({ error: "Name and testimonial are required." });
+      return res.status(400).json({ success: false, error: "Name and testimonial are required." });
     }
 
-    const doc = await sanityWriteClient().create({
+    const created = await client.create({
       _type: "testimonial",
       name,
       email: email || undefined,
@@ -39,10 +42,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       submittedAt: new Date().toISOString(),
     });
 
-    return res.status(200).json({ id: doc._id });
+    return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    return res.status(500).json({
-      error: error instanceof Error ? error.message : "Could not submit testimonial.",
-    });
+    console.error("Testimonial API error:", error);
+    return res.status(500).json({ success: false, error: "Could not submit testimonial." });
   }
 }
