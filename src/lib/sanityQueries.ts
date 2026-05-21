@@ -88,7 +88,7 @@ export const getApprovedTestimonials = async () => {
   if (!isSanityConfigured) return [];
 
   const rows = await fetchSanityQuery<Testimonial[]>(`
-    *[_type == "testimonial" && approved == true]
+    *[_type == "testimonial" && approved == true && !(_id in path("drafts.**"))]
       | order(featured desc, submittedAt desc)[0...24]{
         "id": _id,
         name,
@@ -107,7 +107,7 @@ export const getApprovedGalleryPhotos = async (limit = 24) => {
   if (!isSanityConfigured) return [];
 
   const rows = await fetchSanityQuery<GalleryPhoto[]>(`
-    *[_type == "galleryPhoto" && approved == true]
+    *[_type == "galleryPhoto" && approved == true && defined(image.asset) && !(_id in path("drafts.**"))]
       | order(featured desc, submittedAt desc)[0...${limit}]{
         "id": _id,
         title,
@@ -126,7 +126,7 @@ export const getFeaturedTestimonials = async () => {
   if (!isSanityConfigured) return [];
 
   const rows = await fetchSanityQuery<Testimonial[]>(`
-    *[_type == "testimonial" && approved == true && featured == true]
+    *[_type == "testimonial" && approved == true && featured == true && !(_id in path("drafts.**"))]
       | order(submittedAt desc)[0...6]{
         "id": _id,
         name,
@@ -145,7 +145,7 @@ export const getSiteSettings = async () => {
   if (!isSanityConfigured) return null;
 
   const result = await fetchSanityQuery<SiteSettings | null>(`
-    *[_type == "siteSettings"][0]{
+    *[_type == "siteSettings" && !(_id in path("drafts.**"))][0]{
       siteName,
       heroTitle,
       heroSubtitle,
@@ -176,7 +176,7 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
   if (!isSanityConfigured) return [];
 
   const rows = await sanityClient.fetch<BlockoutDate[]>(`
-    *[_type == "blockoutDate" && active != false]{
+    *[_type == "blockoutDate" && active != false && !(_id in path("drafts.**"))]{
       "id": _id,
       title,
       startDate,

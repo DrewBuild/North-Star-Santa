@@ -85,6 +85,7 @@ const Book = () => {
   const [availability] = useState<AvailabilityDay[]>(getDefaultAvailability());
   const [blockoutDates, setBlockoutDates] = useState<BlockoutDate[]>([]);
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
+  const [dateBlockMessage, setDateBlockMessage] = useState<string | null>(null);
   const [timeBlockMessage, setTimeBlockMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -118,6 +119,7 @@ const Book = () => {
     if (!form.date) return;
     console.log("[blockout] selected event date:", form.date);
     console.log("[blockout] isDateBlocked result:", isDateBlocked(form.date, blockoutDates));
+    setDateBlockMessage(isDateBlocked(form.date, blockoutDates) ? BLOCKED_DATE_MESSAGE : null);
   }, [form.date, blockoutDates]);
 
   useEffect(() => {
@@ -302,10 +304,15 @@ const Book = () => {
               bookedSlots={bookedSlots}
               bookedTimesForSelectedDate={bookedTimesForSelectedDate}
               selectedTime={form.time}
+              dateBlockMessage={dateBlockMessage}
               timeBlockMessage={timeBlockMessage}
               onDateSelect={(date) => {
                 const dateStr = date ? toDateInputValue(date) : "";
-                if (dateStr && isDateBlocked(dateStr, blockoutDates)) return;
+                if (dateStr && isDateBlocked(dateStr, blockoutDates)) {
+                  setDateBlockMessage(BLOCKED_DATE_MESSAGE);
+                  return;
+                }
+                setDateBlockMessage(null);
                 setTimeBlockMessage(null);
                 setForm((current) => ({ ...current, date: dateStr, time: "" }));
               }}
@@ -448,6 +455,7 @@ const BookingCalendar = ({
   bookedSlots,
   bookedTimesForSelectedDate,
   selectedTime,
+  dateBlockMessage,
   timeBlockMessage,
   onDateSelect,
   onTimeSelect,
@@ -461,6 +469,7 @@ const BookingCalendar = ({
   bookedSlots: BookedSlot[];
   bookedTimesForSelectedDate: string[];
   selectedTime: string;
+  dateBlockMessage: string | null;
   timeBlockMessage: string | null;
   onDateSelect: (date: Date | undefined) => void;
   onTimeSelect: (time: string) => void;
@@ -614,6 +623,11 @@ const BookingCalendar = ({
       {blockedTapMessage && (
         <p className="mt-4 rounded-md bg-primary/10 border border-primary/20 px-4 py-3 text-sm font-semibold text-primary">
           {blockedTapMessage}
+        </p>
+      )}
+      {dateBlockMessage && !blockedTapMessage && (
+        <p className="mt-4 rounded-md bg-primary/10 border border-primary/20 px-4 py-3 text-sm font-semibold text-primary">
+          {dateBlockMessage}
         </p>
       )}
       {timeBlockMessage && (

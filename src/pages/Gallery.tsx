@@ -22,7 +22,7 @@ const Gallery = () => {
     const loadPhotos = async () => {
       try {
         const photoRows = await getApprovedGalleryPhotos();
-        setPhotos(photoRows.length > 0 ? [...photoRows, ...localGalleryPhotos] : localGalleryPhotos);
+        setPhotos(photoRows.length > 0 ? photoRows : localGalleryPhotos);
       } catch (error) {
         console.warn("Could not load Sanity gallery photos, using fallback.", error);
         toast({
