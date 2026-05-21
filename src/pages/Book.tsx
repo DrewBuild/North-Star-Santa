@@ -461,6 +461,7 @@ const BookingCalendar = ({
   const blockedDateValues = blockedDates.map((day) => new Date(`${day.blocked_date}T00:00:00`));
   const unavailableDayIndexes = availability.filter((day) => !day.is_available).map((day) => day.day_of_week);
   const isSanityDateBlocked = (date: Date) => isDateBlocked(toDateInputValue(date), blockoutDates);
+  const [blockedTapMessage, setBlockedTapMessage] = useState<string | null>(null);
 
   const allSlotsBooked = (date: Date) => {
     const day = availability.find((item) => item.day_of_week === date.getDay());
@@ -510,6 +511,15 @@ const BookingCalendar = ({
             defaultMonth={calendarStartMonth}
             fromMonth={calendarStartMonth}
             toMonth={settings?.last_business_date ? new Date(`${settings.last_business_date}T00:00:00`) : undefined}
+            onDayClick={(day, activeModifiers) => {
+              if (activeModifiers.disabled) {
+                if (isSanityDateBlocked(day)) {
+                  setBlockedTapMessage("Santa is unavailable on this date. Please choose another date.");
+                }
+              } else {
+                setBlockedTapMessage(null);
+              }
+            }}
             modifiers={{
               available: (date) => !disabledDate(date),
               blocked: (date) =>
@@ -520,9 +530,9 @@ const BookingCalendar = ({
             }}
             modifiersClassNames={{
               available: "bg-secondary/10 text-secondary hover:bg-secondary/20",
-              blocked: "bg-primary/15 text-primary line-through opacity-100",
-              unavailableWeekday: "bg-primary/10 text-primary/80 opacity-80",
-              fullyBooked: "bg-primary/15 text-primary line-through opacity-100",
+              blocked: "!opacity-100 bg-primary/20 text-primary line-through cursor-not-allowed hover:!bg-primary/30",
+              unavailableWeekday: "bg-primary/10 text-primary/80",
+              fullyBooked: "bg-primary/15 text-primary line-through",
             }}
             classNames={{
               months: "flex flex-col",
@@ -533,12 +543,12 @@ const BookingCalendar = ({
               row: "grid grid-cols-7 mt-2",
               cell: "aspect-square text-center text-sm p-0 relative",
               day: "h-full w-full rounded-md p-0 font-semibold hover:bg-accent hover:text-accent-foreground",
-              day_disabled: "opacity-40 pointer-events-none cursor-not-allowed",
+              day_disabled: "opacity-50 cursor-not-allowed",
             }}
           />
           <div className="grid grid-cols-3 gap-2 px-2 pb-2 text-xs">
             <span className="rounded-md bg-secondary/10 px-2 py-1 text-center text-secondary">Open</span>
-            <span className="rounded-md bg-primary/15 px-2 py-1 text-center text-primary">Unavailable</span>
+            <span className="rounded-md bg-primary/20 px-2 py-1 text-center text-primary line-through">Unavailable</span>
             <span className="rounded-md bg-primary px-2 py-1 text-center text-primary-foreground">Selected</span>
           </div>
         </div>
@@ -593,6 +603,11 @@ const BookingCalendar = ({
         </div>
       </div>
 
+      {blockedTapMessage && (
+        <p className="mt-4 rounded-md bg-primary/10 border border-primary/20 px-4 py-3 text-sm font-semibold text-primary">
+          {blockedTapMessage}
+        </p>
+      )}
       {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBeforeFirstDay && !status.isAfterLastDay && !status.isBookedSlot && (
         <p className="mt-4 rounded-md bg-secondary/10 px-4 py-3 text-sm font-semibold text-secondary">
           Selected: {selectedDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at {formatTime(selectedTime)} EST
