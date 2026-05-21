@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* North Star Santa Design System
+   All colors MUST be HSL.
+   Palette: deep red, forest green, antique gold, cream, charcoal.
+*/
+
+@layer base {
+  :root {
+    --background: 39 47% 96%;          /* cream #FAF6EF */
+    --foreground: 0 0% 11%;            /* charcoal #1C1C1C */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 11%;
+
+    --primary: 0 68% 42%;              /* deep christmas red #B22222 */
+    --primary-foreground: 39 47% 96%;
+
+    --secondary: 113 37% 25%;          /* forest green #2D5A27 */
+    --secondary-foreground: 39 47% 96%;
+
+    --gold: 44 53% 54%;                /* antique gold #C9A84C */
+    --gold-foreground: 0 0% 11%;
+
+    --muted: 39 30% 92%;
+    --muted-foreground: 0 0% 35%;
+
+    --accent: 44 53% 54%;
+    --accent-foreground: 0 0% 11%;
+
+    --destructive: 0 68% 42%;
+    --destructive-foreground: 39 47% 96%;
+
+    --border: 39 25% 86%;
+    --input: 39 25% 86%;
+    --ring: 0 68% 42%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(0 68% 22% / 0.85), hsl(113 37% 15% / 0.85));
+    --gradient-banner: linear-gradient(90deg, hsl(0 68% 38%), hsl(0 68% 48%));
+    --gradient-gold: linear-gradient(135deg, hsl(44 60% 60%), hsl(44 53% 44%));
+
+    /* Shadows */
+    --shadow-elegant: 0 12px 40px -12px hsl(0 68% 20% / 0.25);
+    --shadow-card: 0 4px 16px -6px hsl(0 0% 0% / 0.08);
+    --shadow-gold: 0 0 28px hsl(44 53% 54% / 0.45);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Nunito', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Falling snow */
+@layer utilities {
+  .snow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .snow span {
+    position: absolute;
+    top: -10%;
+    color: hsl(0 0% 100% / 0.85);
+    user-select: none;
+    animation: snowfall linear infinite;
+    text-shadow: 0 0 4px hsl(0 0% 100% / 0.6);
+  }
+  @keyframes snowfall {
+    0% { transform: translateY(-10vh) translateX(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(110vh) translateX(20px); opacity: 0.4; }
+  }
+
+  .pulse-gold {
+    animation: pulse-gold 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 0 0 hsl(44 53% 54% / 0.55); }
+    50% { box-shadow: 0 0 0 12px hsl(44 53% 54% / 0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
