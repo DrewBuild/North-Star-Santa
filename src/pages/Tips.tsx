@@ -1,17 +1,24 @@
+import { useEffect, useState } from "react";
 import Reveal from "@/components/Reveal";
-
-const tips = [
-  { title: "Keep It Comfortable", text: "Maintain room temperature at or below 68°F to ensure everyone's comfort during the visit." },
-  { title: "Sturdy Chair Required", text: "Provide a sturdy chair — no recliners or wheels. Place it near your Christmas tree for great photo backgrounds with enough space for people to stand nearby." },
-  { title: "Gift Distribution", text: "If you'd like Santa to distribute presents, communicate where they're located. Ensure packages have names clearly printed. Consider a helper. Securely tape tags — avoid gift bags as items can fall out." },
-  { title: "Prepare the Children", text: "Keep children inside and away from windows when Santa arrives. This preserves the magic — they won't see Santa getting out of his \"sleigh.\"" },
-  { title: "Photos Welcome", text: "Take as many pictures as you'd like. If a child is upset, work with Santa to find a creative solution. Consider putting dogs in another room for a calm atmosphere." },
-  { title: "Everyone Present", text: "Ensure all intended participants are present before Santa arrives. Santa can call or text when he's on his way so everyone is ready." },
-  { title: "Designated Parking", text: "Create a specific, convenient parking spot near the entrance for a smooth and magical arrival." },
-  { title: "Pets", text: "Not all pets are comfortable around strangers in elaborate suits. Keep pets in a separate room for their safety and to prevent stress or accidents." },
-];
+import { fallbackHelpfulHints } from "@/lib/localContent";
+import { getActiveHelpfulHints, type HelpfulHint } from "@/lib/sanityQueries";
 
 const Tips = () => {
+  const [tips, setTips] = useState<HelpfulHint[]>(fallbackHelpfulHints);
+
+  useEffect(() => {
+    const loadTips = async () => {
+      try {
+        const rows = await getActiveHelpfulHints();
+        setTips(rows.length > 0 ? rows : fallbackHelpfulHints);
+      } catch {
+        setTips(fallbackHelpfulHints);
+      }
+    };
+
+    loadTips();
+  }, []);
+
   return (
     <>
       <section className="bg-secondary text-secondary-foreground py-16 md:py-20 text-center">
@@ -34,7 +41,7 @@ const Tips = () => {
                 </div>
                 <div>
                   <h3 className="font-display text-2xl text-secondary mb-2">{tip.title}</h3>
-                  <p className="text-foreground/80 leading-relaxed">{tip.text}</p>
+                  <p className="text-foreground/80 leading-relaxed">{tip.description}</p>
                 </div>
               </article>
             </Reveal>

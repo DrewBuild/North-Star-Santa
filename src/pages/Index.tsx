@@ -1,10 +1,12 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Snow from "@/components/Snow";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
-import { bioPhotos, heroSantaImg, servicePhotos } from "@/lib/localContent";
+import { bioPhotos, fallbackServices, heroSantaImg } from "@/lib/localContent";
+import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
 
 const bioBlocks = [
   {
@@ -21,13 +23,25 @@ const bioBlocks = [
   },
 ];
 
-const services = [
-  { icon: HomeIcon, title: "Home Visits", text: "Personalized in-home magic crafted around your family.", image: servicePhotos[0] },
-  { icon: Building2, title: "Corporate Parties", text: "Festive cheer that wows guests of every age.", image: servicePhotos[1] },
-  { icon: Heart, title: "Schools, Hospitals & Community", text: "Joyful appearances at events that bring people together.", image: servicePhotos[4] },
-];
+const serviceIcons = [HomeIcon, Building2, Heart];
+const fallbackFeaturedServices = fallbackServices.slice(0, 3);
 
 const Home = () => {
+  const [services, setServices] = useState<Service[]>(fallbackFeaturedServices);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const rows = await getFeaturedServices();
+        setServices(rows.length > 0 ? rows : fallbackFeaturedServices);
+      } catch {
+        setServices(fallbackFeaturedServices);
+      }
+    };
+
+    loadServices();
+  }, []);
+
   return (
     <>
       {/* Hero */}
@@ -100,24 +114,28 @@ const Home = () => {
             </div>
           </Reveal>
           <div className="grid gap-6 md:grid-cols-3 md:gap-8">
-            {services.map((s, i) => (
-              <Reveal key={s.title} delay={i * 100}>
+            {services.map((s, i) => {
+              const Icon = serviceIcons[i % serviceIcons.length];
+              const fallback = fallbackFeaturedServices[i % fallbackFeaturedServices.length];
+
+              return (
+              <Reveal key={s.id || s.title} delay={i * 100}>
                 <div className="group h-full bg-card border border-border rounded-lg p-8 shadow-card hover:shadow-elegant hover:-translate-y-1 transition-all">
                   <img
-                    src={s.image.imageUrl}
-                    alt={s.image.alt}
+                    src={s.imageUrl || fallback.imageUrl}
+                    alt={s.imageAlt || s.title}
                     width={800}
                     height={600}
                     loading="lazy"
                     decoding="async"
                     className="mb-6 aspect-[4/3] w-full rounded-md object-cover shadow-card"
-                    style={{ objectPosition: s.image.position }}
+                    style={{ objectPosition: s.imagePosition || "center top" }}
                   />
                   <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <s.icon className="h-6 w-6" />
+                    <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="font-display text-2xl text-secondary mb-3">{s.title}</h3>
-                  <p className="text-foreground/75 mb-6">{s.text}</p>
+                  <p className="text-foreground/75 mb-6">{s.description}</p>
                   <Link
                     to="/services"
                     className="inline-flex items-center gap-1 text-primary font-semibold hover:gap-2 transition-all"
@@ -126,7 +144,8 @@ const Home = () => {
                   </Link>
                 </div>
               </Reveal>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

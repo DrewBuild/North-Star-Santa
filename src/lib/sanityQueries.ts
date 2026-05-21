@@ -22,6 +22,29 @@ export interface GalleryPhoto {
   imagePosition?: string;
 }
 
+export interface Service {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl?: string | null;
+  imageAlt?: string | null;
+  category?: string | null;
+  order?: number | null;
+  active?: boolean;
+  featured?: boolean;
+  slug?: string | null;
+  imagePosition?: string;
+}
+
+export interface HelpfulHint {
+  id: string;
+  title: string;
+  description: string;
+  order?: number | null;
+  active?: boolean;
+  iconName?: string | null;
+}
+
 export interface SiteSettings {
   siteName?: string | null;
   heroTitle?: string | null;
@@ -139,6 +162,50 @@ export const activeBlockoutsQuery = `
   }
 `;
 
+export const activeServicesQuery = `
+  *[_type == "service" && active != false && !(_id in path("drafts.**"))]
+    | order(order asc, title asc){
+      "id": _id,
+      title,
+      description,
+      "imageUrl": image.asset->url,
+      imageAlt,
+      category,
+      order,
+      active,
+      featured,
+      "slug": slug.current
+    }
+`;
+
+export const featuredServicesQuery = `
+  *[_type == "service" && active != false && featured == true && !(_id in path("drafts.**"))]
+    | order(order asc, title asc)[0...3]{
+      "id": _id,
+      title,
+      description,
+      "imageUrl": image.asset->url,
+      imageAlt,
+      category,
+      order,
+      active,
+      featured,
+      "slug": slug.current
+    }
+`;
+
+export const activeHelpfulHintsQuery = `
+  *[_type == "helpfulHint" && active != false && !(_id in path("drafts.**"))]
+    | order(order asc, title asc){
+      "id": _id,
+      title,
+      description,
+      order,
+      active,
+      iconName
+    }
+`;
+
 const defaultAvailability: AvailabilityDay[] = [
   { day_of_week: 0, is_available: true, start_time: "09:00", end_time: "20:00" },
   { day_of_week: 1, is_available: true, start_time: "09:00", end_time: "20:00" },
@@ -252,6 +319,27 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
     activeBlockoutsQuery,
     "activeBlockouts",
   );
+  return rows ?? [];
+};
+
+export const getActiveServices = async (): Promise<Service[]> => {
+  if (!isSanityConfigured) return [];
+
+  const rows = await fetchSanityQuery<Service[]>("active-services", activeServicesQuery, "activeServices");
+  return rows ?? [];
+};
+
+export const getFeaturedServices = async (): Promise<Service[]> => {
+  if (!isSanityConfigured) return [];
+
+  const rows = await fetchSanityQuery<Service[]>("featured-services", featuredServicesQuery, "featuredServices");
+  return rows ?? [];
+};
+
+export const getActiveHelpfulHints = async (): Promise<HelpfulHint[]> => {
+  if (!isSanityConfigured) return [];
+
+  const rows = await fetchSanityQuery<HelpfulHint[]>("active-helpful-hints", activeHelpfulHintsQuery, "activeHelpfulHints");
   return rows ?? [];
 };
 

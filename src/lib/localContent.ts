@@ -6,7 +6,7 @@ import img0960 from "@/assets/IMG_0960.jpeg";
 import img2658 from "@/assets/IMG_2658.jpeg";
 import img9520 from "@/assets/IMG_9520.jpeg";
 import img9947 from "@/assets/IMG_9947.jpeg";
-import type { GalleryPhoto, Testimonial } from "@/lib/sanityQueries";
+import type { GalleryPhoto, HelpfulHint, Service, Testimonial } from "@/lib/sanityQueries";
 
 export { heroSantaImg, logoImg };
 
@@ -77,28 +77,7 @@ export const localGalleryPhotos: GalleryPhoto[] = [
   },
 ];
 
-export const bioPhotos = [
-  {
-    label: "Who He Is",
-    imageUrl: santaWadeImg,
-    alt: "Santa Wade smiling in his North Star Santa suit",
-    position: "center top",
-  },
-  {
-    label: "The Professional",
-    imageUrl: img2658,
-    alt: "North Star Santa in professional Santa attire",
-    position: "center top",
-  },
-  {
-    label: "The Experience",
-    imageUrl: img0960,
-    alt: "North Star Santa creating a joyful Christmas experience",
-    position: "center top",
-  },
-];
-
-export const servicePhotos = [
+const servicePhotoData = [
   {
     title: "Home Visits",
     imageUrl: img0960,
@@ -136,3 +115,109 @@ export const servicePhotos = [
     position: "center center",
   },
 ];
+
+export const fallbackServices: Service[] = [
+  {
+    id: "fallback-service-home-visits",
+    title: "Home Visits",
+    description:
+      "North Star Santa loves Home Visits! Santa is known for his personalized in-home visits, creating a truly magical experience for your children. Before arriving, he gathers special details about each child — favorite colors, teachers, pets, and more — and thoughtfully weaves those personal touches into every conversation, making each visit feel truly one-of-a-kind.",
+    imageUrl: servicePhotoData[0].imageUrl,
+    imageAlt: servicePhotoData[0].alt,
+    imagePosition: servicePhotoData[0].position,
+    order: 1,
+    active: true,
+    featured: true,
+  },
+  {
+    id: "fallback-service-corporate-parties",
+    title: "Corporate Parties",
+    description:
+      "North Star Santa enjoys Corporate Parties! Santa brings a touch of holiday magic to corporate events, Christmas parties, and special gatherings, delighting guests of all ages with his engaging presence and adding a festive charm to every celebration.",
+    imageUrl: servicePhotoData[1].imageUrl,
+    imageAlt: servicePhotoData[1].alt,
+    imagePosition: servicePhotoData[1].position,
+    order: 2,
+    active: true,
+    featured: true,
+  },
+  {
+    id: "fallback-service-school-events",
+    title: "School Events",
+    description:
+      "North Star Santa delights in school events, from classroom visits to larger Christmas programs. His ability to engage even the shyest child makes these visits memorable, warm, and easy for staff to host.",
+    imageUrl: servicePhotoData[2].imageUrl,
+    imageAlt: servicePhotoData[2].alt,
+    imagePosition: servicePhotoData[2].position,
+    order: 3,
+    active: true,
+    featured: true,
+  },
+  {
+    id: "fallback-service-hospital-events",
+    title: "Hospital Events",
+    description:
+      "Santa can bring comfort and joy to children in hospitals during the Christmas season. His cheerful presence helps brighten the spirits of young patients and their families with gentle, caring holiday magic.",
+    imageUrl: servicePhotoData[3].imageUrl,
+    imageAlt: servicePhotoData[3].alt,
+    imagePosition: servicePhotoData[3].position,
+    order: 4,
+    active: true,
+  },
+  {
+    id: "fallback-service-community-events",
+    title: "Community Events",
+    description:
+      "North Star Santa participates in parades, tree lightings, HOA neighborhood gatherings, and community celebrations with a polished presence that keeps the Christmas spirit front and center.",
+    imageUrl: servicePhotoData[4].imageUrl,
+    imageAlt: servicePhotoData[4].alt,
+    imagePosition: servicePhotoData[4].position,
+    order: 5,
+    active: true,
+  },
+  {
+    id: "fallback-service-meals-with-santa",
+    title: "Breakfast, Lunch & Dinner with Santa",
+    description:
+      "Meal events with Santa become relaxed, joyful traditions where families can gather, visit, take photos, and enjoy a personal Christmas moment without feeling rushed.",
+    imageUrl: servicePhotoData[5].imageUrl,
+    imageAlt: servicePhotoData[5].alt,
+    imagePosition: servicePhotoData[5].position,
+    order: 6,
+    active: true,
+  },
+];
+
+export const fallbackHelpfulHints: HelpfulHint[] = [
+  { id: "fallback-hint-comfortable", title: "Keep It Comfortable", description: "Maintain room temperature at or below 68°F to ensure everyone's comfort during the visit.", order: 1, active: true },
+  { id: "fallback-hint-chair", title: "Sturdy Chair Required", description: "Provide a sturdy chair — no recliners or wheels. Place it near your Christmas tree for great photo backgrounds with enough space for people to stand nearby.", order: 2, active: true },
+  { id: "fallback-hint-gifts", title: "Gift Distribution", description: "If you'd like Santa to distribute presents, communicate where they're located. Ensure packages have names clearly printed. Consider a helper. Securely tape tags — avoid gift bags as items can fall out.", order: 3, active: true },
+  { id: "fallback-hint-children", title: "Prepare the Children", description: "Keep children inside and away from windows when Santa arrives. This preserves the magic — they won't see Santa getting out of his \"sleigh.\"", order: 4, active: true },
+  { id: "fallback-hint-photos", title: "Photos Welcome", description: "Take as many pictures as you'd like. If a child is upset, work with Santa to find a creative solution. Consider putting dogs in another room for a calm atmosphere.", order: 5, active: true },
+  { id: "fallback-hint-present", title: "Everyone Present", description: "Ensure all intended participants are present before Santa arrives. Santa can call or text when he's on his way so everyone is ready.", order: 6, active: true },
+  { id: "fallback-hint-parking", title: "Designated Parking", description: "Create a specific, convenient parking spot near the entrance for a smooth and magical arrival.", order: 7, active: true },
+  { id: "fallback-hint-pets", title: "Pets", description: "Not all pets are comfortable around strangers in elaborate suits. Keep pets in a separate room for their safety and to prevent stress or accidents.", order: 8, active: true },
+];
+
+export const bioPhotos = [
+  {
+    label: "Who He Is",
+    imageUrl: santaWadeImg,
+    alt: "Santa Wade smiling in his North Star Santa suit",
+    position: "center top",
+  },
+  {
+    label: "The Professional",
+    imageUrl: img2658,
+    alt: "North Star Santa in professional Santa attire",
+    position: "center top",
+  },
+  {
+    label: "The Experience",
+    imageUrl: img0960,
+    alt: "North Star Santa creating a joyful Christmas experience",
+    position: "center top",
+  },
+];
+
+export const servicePhotos = servicePhotoData;

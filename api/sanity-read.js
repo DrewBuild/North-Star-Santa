@@ -85,6 +85,47 @@ const queries = {
       repeatYearly
     }
   `,
+  activeServices: () => `
+    *[_type == "service" && active != false && !(_id in path("drafts.**"))]
+      | order(order asc, title asc){
+        "id": _id,
+        title,
+        description,
+        "imageUrl": image.asset->url,
+        imageAlt,
+        category,
+        order,
+        active,
+        featured,
+        "slug": slug.current
+      }
+  `,
+  featuredServices: () => `
+    *[_type == "service" && active != false && featured == true && !(_id in path("drafts.**"))]
+      | order(order asc, title asc)[0...3]{
+        "id": _id,
+        title,
+        description,
+        "imageUrl": image.asset->url,
+        imageAlt,
+        category,
+        order,
+        active,
+        featured,
+        "slug": slug.current
+      }
+  `,
+  activeHelpfulHints: () => `
+    *[_type == "helpfulHint" && active != false && !(_id in path("drafts.**"))]
+      | order(order asc, title asc){
+        "id": _id,
+        title,
+        description,
+        order,
+        active,
+        iconName
+      }
+  `,
 };
 
 const readJsonBody = async (req) => {
