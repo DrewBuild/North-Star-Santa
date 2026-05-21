@@ -14,27 +14,53 @@ function getMonthDay(dateString: string): string {
 }
 
 type BlockoutRecord = {
+  isFullDay: boolean;
   startDate: string;
   endDate: string | null;
+  startTime: string | null;
+  endTime: string | null;
   repeatYearly: boolean;
 };
 
-function isDateBlockedApi(selectedDate: string, blockouts: BlockoutRecord[]): boolean {
+function isDateInBlockoutApi(selectedDate: string, blockout: BlockoutRecord): boolean {
   const selected = normalizeDate(selectedDate);
-  if (!selected || blockouts.length === 0) return false;
+  if (!selected) return false;
   const selectedMD = getMonthDay(selected);
+  const start = normalizeDate(blockout.startDate);
+  const end = normalizeDate(blockout.endDate || blockout.startDate);
+
+  if (!start) return false;
+
+  if (blockout.repeatYearly) {
+    const startMD = getMonthDay(start);
+    const endMD = getMonthDay(end);
+    if (!endMD || startMD === endMD) return selectedMD === startMD;
+    if (startMD < endMD) return selectedMD >= startMD && selectedMD <= endMD;
+    return selectedMD >= startMD || selectedMD <= endMD;
+  }
+
+  return selected >= start && selected <= end;
+}
+
+function isDateBlockedApi(selectedDate: string, blockouts: BlockoutRecord[]): boolean {
+  if (!selectedDate || blockouts.length === 0) return false;
+  return blockouts.some((b) => b.isFullDay !== false && isDateInBlockoutApi(selectedDate, b));
+}
+
+function isTimeBlockedApi(selectedDate: string, selectedTime: string, blockouts: BlockoutRecord[]): boolean {
+  const normalizedTime = selectedTime.slice(0, 5);
+  if (!selectedDate || !normalizedTime || blockouts.length === 0) return false;
+
   return blockouts.some((b) => {
-    const start = normalizeDate(b.startDate);
-    const end = normalizeDate(b.endDate || b.startDate);
-    if (!start) return false;
-    if (b.repeatYearly) {
-      const startMD = getMonthDay(start);
-      const endMD = getMonthDay(end);
-      if (!endMD || startMD === endMD) return selectedMD === startMD;
-      if (startMD < endMD) return selectedMD >= startMD && selectedMD <= endMD;
-      return selectedMD >= startMD || selectedMD <= endMD;
-    }
-    return selected >= start && selected <= end;
+    if (b.isFullDay !== false || !isDateInBlockoutApi(selectedDate, b)) return false;
+
+    const startTime = (b.startTime || "").slice(0, 5);
+    const endTime = (b.endTime || "").slice(0, 5);
+
+    if (!startTime && !endTime) return false;
+    if (startTime && !endTime) return normalizedTime === startTime;
+    if (!startTime && endTime) return normalizedTime < endTime;
+    return normalizedTime >= startTime && normalizedTime < endTime;
   });
 }
 
@@ -81,12 +107,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (eventDate) {
       const blockouts = await client.fetch<BlockoutRecord[]>(
-        `*[_type == "blockoutDate" && active != false]{ startDate, endDate, repeatYearly }`,
+        `*[_type == "blockoutDate" && active != false]{ isFullDay, startDate, endDate, startTime, endTime, repeatYearly }`,
       );
       if (isDateBlockedApi(eventDate, blockouts)) {
         return res.status(400).json({
           success: false,
           error: "Santa is unavailable on this date. Please choose another date.",
+        });
+      }
+      if (eventTime && isTimeBlockedApi(eventDate, eventTime, blockouts)) {
+        return res.status(400).json({
+          success: false,
+          error: "That time is unavailable. Please choose another time.",
         });
       }
     }

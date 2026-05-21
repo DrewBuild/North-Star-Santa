@@ -70,6 +70,9 @@ export interface BlockoutDate {
   repeatYearly: boolean;
 }
 
+export const BLOCKED_TIME_MESSAGE = "That time is unavailable. Please choose another time.";
+export const BLOCKED_DATE_MESSAGE = "Santa is unavailable on this date. Please choose another date.";
+
 export interface AvailabilityDay {
   day_of_week: number;
   is_available: boolean;
@@ -222,27 +225,59 @@ export const isDateBlocked = (
   selectedDate: string | null | undefined,
   blockouts: BlockoutDate[] | undefined | null = [],
 ): boolean => {
+  return isFullDayBlocked(selectedDate, blockouts);
+};
+
+export const isDateInBlockout = (
+  selectedDate: string | null | undefined,
+  blockout: Pick<BlockoutDate, "active" | "startDate" | "endDate" | "repeatYearly"> | null | undefined,
+): boolean => {
   const selected = normalizeDate(selectedDate);
-  if (!selected || !blockouts || blockouts.length === 0) return false;
+  if (!selected || !blockout || blockout.active === false) return false;
 
   const selectedMonthDay = getMonthDay(selected);
+  const start = normalizeDate(blockout.startDate);
+  const end = normalizeDate(blockout.endDate || blockout.startDate);
+
+  if (!start) return false;
+
+  if (blockout.repeatYearly) {
+    const startMD = getMonthDay(start);
+    const endMD = getMonthDay(end);
+    if (!endMD || startMD === endMD) return selectedMonthDay === startMD;
+    if (startMD < endMD) return selectedMonthDay >= startMD && selectedMonthDay <= endMD;
+    return selectedMonthDay >= startMD || selectedMonthDay <= endMD;
+  }
+
+  return selected >= start && selected <= end;
+};
+
+export const isFullDayBlocked = (
+  selectedDate: string | null | undefined,
+  blockouts: BlockoutDate[] | undefined | null = [],
+): boolean => {
+  if (!selectedDate || !blockouts || blockouts.length === 0) return false;
+
+  return blockouts.some((blockout) => blockout.isFullDay !== false && isDateInBlockout(selectedDate, blockout));
+};
+
+export const isTimeBlocked = (
+  selectedDate: string | null | undefined,
+  selectedTime: string | null | undefined,
+  blockouts: BlockoutDate[] | undefined | null = [],
+): boolean => {
+  const normalizedTime = typeof selectedTime === "string" ? selectedTime.slice(0, 5) : "";
+  if (!selectedDate || !normalizedTime || !blockouts || blockouts.length === 0) return false;
 
   return blockouts.some((blockout) => {
-    if (!blockout || blockout.active === false) return false;
+    if (blockout.isFullDay !== false || !isDateInBlockout(selectedDate, blockout)) return false;
 
-    const start = normalizeDate(blockout.startDate);
-    const end = normalizeDate(blockout.endDate || blockout.startDate);
+    const startTime = (blockout.startTime || "").slice(0, 5);
+    const endTime = (blockout.endTime || "").slice(0, 5);
 
-    if (!start) return false;
-
-    if (blockout.repeatYearly) {
-      const startMD = getMonthDay(start);
-      const endMD = getMonthDay(end);
-      if (!endMD || startMD === endMD) return selectedMonthDay === startMD;
-      if (startMD < endMD) return selectedMonthDay >= startMD && selectedMonthDay <= endMD;
-      return selectedMonthDay >= startMD || selectedMonthDay <= endMD;
-    }
-
-    return selected >= start && selected <= end;
+    if (!startTime && !endTime) return false;
+    if (startTime && !endTime) return normalizedTime === startTime;
+    if (!startTime && endTime) return normalizedTime < endTime;
+    return normalizedTime >= startTime && normalizedTime < endTime;
   });
 };

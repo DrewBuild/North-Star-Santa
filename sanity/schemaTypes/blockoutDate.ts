@@ -37,6 +37,12 @@ export default defineType({
       type: "string",
       description: "Only applies when Full Day Block is off.",
       hidden: ({ document }) => document?.isFullDay !== false,
+      validation: (Rule) =>
+        Rule.custom((value, context) => {
+          if (context.document?.isFullDay !== false) return true;
+          if (!value) return "Start time is required for partial-day blockouts.";
+          return /^([01]\d|2[0-3]):[0-5]\d$/.test(value) || "Use 24-hour HH:mm format, e.g. 09:00.";
+        }),
     }),
     defineField({
       name: "endTime",
@@ -44,6 +50,12 @@ export default defineType({
       type: "string",
       description: "Only applies when Full Day Block is off.",
       hidden: ({ document }) => document?.isFullDay !== false,
+      validation: (Rule) =>
+        Rule.custom((value, context) => {
+          if (context.document?.isFullDay !== false) return true;
+          if (!value) return "End time is required for partial-day blockouts.";
+          return /^([01]\d|2[0-3]):[0-5]\d$/.test(value) || "Use 24-hour HH:mm format, e.g. 12:00.";
+        }),
     }),
     defineField({
       name: "reason",
