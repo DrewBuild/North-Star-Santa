@@ -24,8 +24,8 @@ const eventTypes = [
 ];
 
 const Testimonials = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(realTestimonials);
+  const [photos, setPhotos] = useState<GalleryPhoto[]>(localGalleryPhotos);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -37,16 +37,14 @@ const Testimonials = () => {
           getApprovedGalleryPhotos(),
         ]);
 
-        const extraTestimonials = testimonialRows.filter(
-          (testimonial) => !realTestimonials.some((local) => local.name === testimonial.name),
-        );
-
         setTestimonials(testimonialRows.length > 0 ? testimonialRows : realTestimonials);
         setPhotos(photoRows.length > 0 ? photoRows : localGalleryPhotos);
       } catch (error) {
+        // Sanity unavailable — keep the fallback content already in state
+        console.warn("Could not load Sanity content, using fallback.", error);
         toast({
-          title: "Could not load testimonials",
-          description: error instanceof Error ? error.message : "Check the Sanity connection.",
+          title: "Could not load latest content",
+          description: "Showing cached content instead.",
           variant: "destructive",
         });
       } finally {
