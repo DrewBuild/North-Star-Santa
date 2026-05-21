@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@sanity/client";
+import { cleanText, readJsonBody, sanityProjectId, sanityWriteClient } from "./_sanity";
 
 // --- blockout helpers (mirrors src/lib/sanity.ts, kept self-contained) ---
 
@@ -31,14 +31,12 @@ function isDateBlockedApi(selectedDate: string, blockouts: BlockoutRecord[]): bo
       const startMD = getMonthDay(start);
       const endMD = getMonthDay(end);
       if (!endMD || startMD === endMD) return selectedMD === startMD;
-      return selectedMD >= startMD && selectedMD <= endMD;
+      if (startMD < endMD) return selectedMD >= startMD && selectedMD <= endMD;
+      return selectedMD >= startMD || selectedMD <= endMD;
     }
     return selected >= start && selected <= end;
   });
 }
-
-const clean = (value: unknown, max = 500) =>
-  typeof value === "string" ? value.trim().slice(0, max) : "";
 
 const eventTypeMap: Record<string, string> = {
   "Private Home Visit": "Home Visit",
@@ -50,7 +48,7 @@ const eventTypeMap: Record<string, string> = {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("API hit: bookings");
-  console.log("Sanity project:", process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
+  console.log("Sanity project:", sanityProjectId);
   console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
 
   if (req.method !== "POST") {
@@ -63,25 +61,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ success: false, error: "Server configuration error. Please contact the site owner." });
   }
 
-  const client = createClient({
-    projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
-    dataset: process.env.VITE_SANITY_DATASET || "production",
-    apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
-    token: process.env.SANITY_WRITE_TOKEN,
-    useCdn: false,
-  });
-
   try {
-    const body = req.body ?? {};
-    const fullName = clean(body.fullName, 160);
-    const email = clean(body.email, 160);
-    const phone = clean(body.phone, 80);
-    const rawEventType = clean(body.eventType, 120);
+    const client = sanityWriteClient();
+    const body = await readJsonBody<Record<string, unknown>>(req);
+    const fullName = cleanText(body.fullName, 160);
+    const email = cleanText(body.email, 160);
+    const phone = cleanText(body.phone, 80);
+    const rawEventType = cleanText(body.eventType, 120);
     const eventType = eventTypeMap[rawEventType] || rawEventType || "Other";
-    const eventDate = clean(body.eventDate, 20);
-    const eventTime = clean(body.eventTime, 20);
-    const eventLocation = clean(body.eventLocation, 1000);
-    const message = clean(body.message, 2000);
+    const eventDate = cleanText(body.eventDate, 20);
+    const eventTime = cleanText(body.eventTime, 20);
+    const eventLocation = cleanText(body.eventLocation, 1000);
+    const message = cleanText(body.message, 2000);
     const numberOfGuests = Number(body.numberOfGuests || 0);
 
     if (!fullName || !email) {

@@ -1,12 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@sanity/client";
-
-const clean = (value: unknown, max = 500) =>
-  typeof value === "string" ? value.trim().slice(0, max) : "";
+import { cleanText, readJsonBody, sanityProjectId, sanityWriteClient } from "./_sanity";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("API hit: testimonials");
-  console.log("Sanity project:", process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
+  console.log("Sanity project:", sanityProjectId);
   console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
 
   if (req.method !== "POST") {
@@ -19,21 +16,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ success: false, error: "Server configuration error. Please contact the site owner." });
   }
 
-  const client = createClient({
-    projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
-    dataset: process.env.VITE_SANITY_DATASET || "production",
-    apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
-    token: process.env.SANITY_WRITE_TOKEN,
-    useCdn: false,
-  });
-
   try {
-    const body = req.body ?? {};
-    const name = clean(body.name, 120);
-    const email = clean(body.email, 160);
-    const reviewText = clean(body.reviewText, 2000);
-    const organization = clean(body.organization, 160);
-    const location = clean(body.location, 160);
+    const client = sanityWriteClient();
+    const body = await readJsonBody<Record<string, unknown>>(req);
+    const name = cleanText(body.name, 120);
+    const email = cleanText(body.email, 160);
+    const reviewText = cleanText(body.reviewText, 2000);
+    const organization = cleanText(body.organization, 160);
+    const location = cleanText(body.location, 160);
 
     if (!name || !reviewText) {
       return res.status(400).json({ success: false, error: "Name and testimonial are required." });

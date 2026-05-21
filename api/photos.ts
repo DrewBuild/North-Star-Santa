@@ -1,21 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@sanity/client";
-
-const clean = (value: unknown, max = 500) =>
-  typeof value === "string" ? value.trim().slice(0, max) : "";
-
-const parseDataUrl = (dataUrl: string) => {
-  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!match) throw new Error("Invalid image upload.");
-  const [, mimeType, base64] = match;
-  const buffer = Buffer.from(base64, "base64");
-  if (buffer.length > 5 * 1024 * 1024) throw new Error("Image uploads must be 5MB or smaller.");
-  return { buffer, mimeType };
-};
+import { cleanText, parseDataUrlImage, readJsonBody, sanityProjectId, sanityWriteClient } from "./_sanity";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log("API hit: photos");
-  console.log("Sanity project:", process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
+  console.log("Sanity project:", sanityProjectId);
   console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
 
   if (req.method !== "POST") {
@@ -28,26 +16,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ success: false, error: "Server configuration error. Please contact the site owner." });
   }
 
-  const client = createClient({
-    projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
-    dataset: process.env.VITE_SANITY_DATASET || "production",
-    apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
-    token: process.env.SANITY_WRITE_TOKEN,
-    useCdn: false,
-  });
-
   try {
-    const body = req.body ?? {};
-    const title = clean(body.title, 160);
-    const caption = clean(body.caption, 1000);
-    const submittedBy = clean(body.submittedBy, 120);
-    const submittedEmail = clean(body.submittedEmail, 160);
+    const client = sanityWriteClient();
+    const body = await readJsonBody<Record<string, unknown>>(req);
+    const title = cleanText(body.title, 160);
+    const caption = cleanText(body.caption, 1000);
+    const submittedBy = cleanText(body.submittedBy, 120);
+    const submittedEmail = cleanText(body.submittedEmail, 160);
 
-    if (!body.imageDataUrl) {
+    if (typeof body.imageDataUrl !== "string") {
       return res.status(400).json({ success: false, error: "A photo is required." });
     }
 
-    const image = parseDataUrl(body.imageDataUrl);
+    const image = parseDataUrlImage(body.imageDataUrl);
 
     console.log("Uploading photo asset for:", submittedBy || "anonymous");
 

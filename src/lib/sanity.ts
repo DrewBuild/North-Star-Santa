@@ -70,22 +70,11 @@ export interface BlockoutDate {
   repeatYearly: boolean;
 }
 
-export interface BookingSettings {
-  first_business_date: string | null;
-  last_business_date: string | null;
-}
-
 export interface AvailabilityDay {
   day_of_week: number;
   is_available: boolean;
   start_time: string;
   end_time: string;
-}
-
-export interface BlockedDate {
-  id: string;
-  blocked_date: string;
-  reason: string | null;
 }
 
 export interface BookedSlot {
@@ -250,7 +239,8 @@ export const isDateBlocked = (
       const startMD = getMonthDay(start);
       const endMD = getMonthDay(end);
       if (!endMD || startMD === endMD) return selectedMonthDay === startMD;
-      return selectedMonthDay >= startMD && selectedMonthDay <= endMD;
+      if (startMD < endMD) return selectedMonthDay >= startMD && selectedMonthDay <= endMD;
+      return selectedMonthDay >= startMD || selectedMonthDay <= endMD;
     }
 
     return selected >= start && selected <= end;

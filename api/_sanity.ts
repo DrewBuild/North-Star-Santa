@@ -1,9 +1,11 @@
 import { createClient } from "@sanity/client";
 
-const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
-const dataset = process.env.VITE_SANITY_DATASET || "production";
+const projectId = process.env.SANITY_PROJECT_ID || process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
+const dataset = process.env.SANITY_DATASET || process.env.VITE_SANITY_DATASET || "production";
 const apiVersion = process.env.VITE_SANITY_API_VERSION || "2025-01-01";
 const token = process.env.SANITY_WRITE_TOKEN;
+
+export const sanityProjectId = projectId;
 
 export const sanityWriteClient = () => {
   if (!projectId || !dataset || !token) {

@@ -16,10 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
   type AvailabilityDay,
-  type BlockedDate,
   type BlockoutDate,
   type BookedSlot,
-  type BookingSettings,
   getActiveBlockoutDates,
   getBookedSlots,
   getDefaultAvailability,
@@ -81,9 +79,7 @@ const Book = () => {
   const [form, setForm] = useState<FormState>(initial);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [settings] = useState<BookingSettings | null>(null);
   const [availability] = useState<AvailabilityDay[]>(getDefaultAvailability());
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
   const [blockoutDates, setBlockoutDates] = useState<BlockoutDate[]>([]);
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
   const { toast } = useToast();
@@ -131,13 +127,9 @@ const Book = () => {
 
   const selectedDate = form.date ? new Date(`${form.date}T00:00:00`) : undefined;
 
-  const blockedDate = blockedDates.find((day) => day.blocked_date === form.date);
-  // Blockout dates from Sanity (ranges, repeating, full-day)
   const blockedEntry = form.date ? blockoutDates.find((b) => isDateBlocked(form.date, [b])) : null;
-  const isBeforeFirstDay = Boolean(settings?.first_business_date && form.date && form.date < settings.first_business_date);
-  const isAfterLastDay = Boolean(settings?.last_business_date && form.date && form.date > settings.last_business_date);
   const isUnavailableDay = Boolean(form.date && selectedDay && !selectedDay.is_available);
-  const isBlockedDate = Boolean(blockedDate) || Boolean(form.date && isDateBlocked(form.date, blockoutDates));
+  const isBlockedDate = Boolean(form.date && isDateBlocked(form.date, blockoutDates));
   const isOutsideHours = Boolean(
     form.time &&
       selectedDay?.is_available &&
@@ -146,11 +138,11 @@ const Book = () => {
   const isBookedSlot = bookedSlots.some(
     (slot) => slot.event_date === form.date && slot.event_time.slice(0, 5) === form.time,
   );
-  const cannotBookSelectedTime = isBeforeFirstDay || isAfterLastDay || isUnavailableDay || isBlockedDate || isOutsideHours || isBookedSlot;
+  const cannotBookSelectedTime = isUnavailableDay || isBlockedDate || isOutsideHours || isBookedSlot;
   const timeSlots = useMemo(() => {
-    if (!selectedDay?.is_available || isBeforeFirstDay || isAfterLastDay || isBlockedDate) return [];
+    if (!selectedDay?.is_available || isBlockedDate) return [];
     return buildTimeSlots(selectedDay.start_time, selectedDay.end_time);
-  }, [isAfterLastDay, isBeforeFirstDay, isBlockedDate, selectedDay]);
+  }, [isBlockedDate, selectedDay]);
   const bookedTimesForSelectedDate = useMemo(
     () => bookedSlots.filter((slot) => slot.event_date === form.date).map((slot) => slot.event_time.slice(0, 5)),
     [bookedSlots, form.date],
@@ -291,11 +283,9 @@ const Book = () => {
             </div>
             <BookingCalendar
               availability={availability}
-              blockedDates={blockedDates}
               blockoutDates={blockoutDates}
               selectedDate={selectedDate}
               selectedDay={selectedDay}
-              settings={settings}
               timeSlots={timeSlots}
               bookedSlots={bookedSlots}
               bookedTimesForSelectedDate={bookedTimesForSelectedDate}
@@ -307,9 +297,7 @@ const Book = () => {
               }}
               onTimeSelect={(time) => setForm((current) => ({ ...current, time }))}
               status={{
-                blockedReason: blockedDate?.reason ?? blockedEntry?.reason ?? null,
-                isAfterLastDay,
-                isBeforeFirstDay,
+                blockedReason: blockedEntry?.reason ?? null,
                 isBlockedDate,
                 isOutsideHours,
                 isUnavailableDay,
@@ -422,11 +410,9 @@ const buildTimeSlots = (startTime: string, endTime: string) => {
 
 const BookingCalendar = ({
   availability,
-  blockedDates,
   blockoutDates,
   selectedDate,
   selectedDay,
-  settings,
   timeSlots,
   bookedSlots,
   bookedTimesForSelectedDate,
@@ -436,11 +422,9 @@ const BookingCalendar = ({
   status,
 }: {
   availability: AvailabilityDay[];
-  blockedDates: BlockedDate[];
   blockoutDates: BlockoutDate[];
   selectedDate: Date | undefined;
   selectedDay: AvailabilityDay | null;
-  settings: BookingSettings | null;
   timeSlots: string[];
   bookedSlots: BookedSlot[];
   bookedTimesForSelectedDate: string[];
@@ -449,8 +433,6 @@ const BookingCalendar = ({
   onTimeSelect: (time: string) => void;
   status: {
     blockedReason: string | null;
-    isAfterLastDay: boolean;
-    isBeforeFirstDay: boolean;
     isBlockedDate: boolean;
     isOutsideHours: boolean;
     isUnavailableDay: boolean;
@@ -458,7 +440,6 @@ const BookingCalendar = ({
   };
 }) => {
   const openDays = availability.filter((day) => day.is_available);
-  const blockedDateValues = blockedDates.map((day) => new Date(`${day.blocked_date}T00:00:00`));
   const unavailableDayIndexes = availability.filter((day) => !day.is_available).map((day) => day.day_of_week);
   const isSanityDateBlocked = (date: Date) => isDateBlocked(toDateInputValue(date), blockoutDates);
   const [blockedTapMessage, setBlockedTapMessage] = useState<string | null>(null);
@@ -477,18 +458,11 @@ const BookingCalendar = ({
     const day = availability.find((item) => item.day_of_week === date.getDay());
 
     return Boolean(
-      blockedDates.some((blocked) => blocked.blocked_date === dateValue) ||
-        isDateBlocked(dateValue, blockoutDates) ||
-        (settings?.first_business_date && dateValue < settings.first_business_date) ||
-        (settings?.last_business_date && dateValue > settings.last_business_date) ||
+      isDateBlocked(dateValue, blockoutDates) ||
         (day && !day.is_available) ||
         allSlotsBooked(date),
     );
   };
-
-  const calendarStartMonth = settings?.first_business_date
-    ? new Date(`${settings.first_business_date}T00:00:00`)
-    : selectedDate;
 
   return (
     <div className="md:col-span-2 rounded-lg border border-border bg-muted/50 p-4 md:p-5">
@@ -496,21 +470,18 @@ const BookingCalendar = ({
         <p className="text-gold uppercase tracking-[0.22em] text-xs font-bold mb-2">Choose a Visit Time</p>
         <h2 className="font-display text-2xl text-secondary">Santa's Booking Calendar</h2>
         <p className="mt-2 text-sm text-foreground/75">
-          Green dates are open for booking. Red dates are unavailable. Pick a date first, then choose one of the available Eastern Standard Time start times.
+          Pick an available date first, then choose one of the available Eastern Standard Time start times. Light red dates are unavailable.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div className="rounded-lg bg-background border border-border p-2">
           <Calendar
-            key={settings?.first_business_date ?? "current-season"}
             mode="single"
             selected={selectedDate}
             onSelect={onDateSelect}
             disabled={disabledDate}
-            defaultMonth={calendarStartMonth}
-            fromMonth={calendarStartMonth}
-            toMonth={settings?.last_business_date ? new Date(`${settings.last_business_date}T00:00:00`) : undefined}
+            defaultMonth={selectedDate}
             onDayClick={(day, activeModifiers) => {
               if (activeModifiers.disabled) {
                 if (isSanityDateBlocked(day)) {
@@ -522,17 +493,15 @@ const BookingCalendar = ({
             }}
             modifiers={{
               available: (date) => !disabledDate(date),
-              blocked: (date) =>
-                blockedDateValues.some((d) => d.getTime() === date.getTime()) ||
-                isSanityDateBlocked(date),
+              blocked: isSanityDateBlocked,
               unavailableWeekday: (date) => unavailableDayIndexes.includes(date.getDay()),
               fullyBooked: allSlotsBooked,
             }}
             modifiersClassNames={{
-              available: "bg-secondary/10 text-secondary hover:bg-secondary/20",
-              blocked: "!opacity-100 bg-primary/20 text-primary line-through cursor-not-allowed hover:!bg-primary/30",
+              available: "hover:bg-accent hover:text-accent-foreground",
+              blocked: "!opacity-100 bg-primary/10 text-primary line-through cursor-not-allowed hover:!bg-primary/15",
               unavailableWeekday: "bg-primary/10 text-primary/80",
-              fullyBooked: "bg-primary/15 text-primary line-through",
+              fullyBooked: "bg-primary/10 text-primary line-through",
             }}
             classNames={{
               months: "flex flex-col",
@@ -547,8 +516,8 @@ const BookingCalendar = ({
             }}
           />
           <div className="grid grid-cols-3 gap-2 px-2 pb-2 text-xs">
-            <span className="rounded-md bg-secondary/10 px-2 py-1 text-center text-secondary">Open</span>
-            <span className="rounded-md bg-primary/20 px-2 py-1 text-center text-primary line-through">Unavailable</span>
+            <span className="rounded-md border border-border bg-background px-2 py-1 text-center text-foreground">Available</span>
+            <span className="rounded-md bg-primary/10 px-2 py-1 text-center text-primary line-through">Unavailable</span>
             <span className="rounded-md bg-primary px-2 py-1 text-center text-primary-foreground">Selected</span>
           </div>
         </div>
@@ -608,24 +577,20 @@ const BookingCalendar = ({
           {blockedTapMessage}
         </p>
       )}
-      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBeforeFirstDay && !status.isAfterLastDay && !status.isBookedSlot && (
+      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBookedSlot && (
         <p className="mt-4 rounded-md bg-secondary/10 px-4 py-3 text-sm font-semibold text-secondary">
           Selected: {selectedDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at {formatTime(selectedTime)} EST
         </p>
       )}
-      {(status.isUnavailableDay || status.isBlockedDate || status.blockedReason || status.isBeforeFirstDay || status.isAfterLastDay || status.isOutsideHours || status.isBookedSlot) && (
+      {(status.isUnavailableDay || status.isBlockedDate || status.blockedReason || status.isOutsideHours || status.isBookedSlot) && (
         <p className="mt-4 rounded-md bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">
           {(status.isBlockedDate || status.blockedReason)
             ? "Santa is unavailable on this date. Please choose another date."
-            : status.isBeforeFirstDay
-              ? "That date is before Santa's first booking day."
-              : status.isAfterLastDay
-                ? "That date is after Santa's last booking day."
-                : status.isBookedSlot
-                  ? "That time slot is already booked."
-                  : status.isOutsideHours
-                    ? "That time is outside Santa's available hours."
-                    : "Santa is not available on that day of the week."}
+            : status.isBookedSlot
+              ? "That time slot is already booked."
+              : status.isOutsideHours
+                ? "That time is outside Santa's available hours."
+                : "Santa is not available on that day of the week."}
         </p>
       )}
     </div>

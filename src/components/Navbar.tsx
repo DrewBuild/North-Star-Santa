@@ -8,6 +8,7 @@ import { logoImg } from "@/lib/localContent";
 const links = [
   { to: "/", label: "Home" },
   { to: "/testimonials", label: "Testimonials" },
+  { to: "/gallery", label: "Gallery" },
   { to: "/services", label: "Services" },
   { to: "/tips", label: "Helpful Hints" },
 ];

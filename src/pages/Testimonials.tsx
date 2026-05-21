@@ -1,19 +1,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Reveal from "@/components/Reveal";
-import { ImageOff, ImagePlus, Quote, X } from "lucide-react";
+import { MessageSquareOff, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  getApprovedGalleryPhotos,
   getApprovedTestimonials,
   isSanityConfigured,
-  type GalleryPhoto,
   type Testimonial,
 } from "@/lib/sanity";
-import { localGalleryPhotos, realTestimonials } from "@/lib/localContent";
+import { realTestimonials } from "@/lib/localContent";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -25,23 +23,17 @@ const eventTypes = [
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(realTestimonials);
-  const [photos, setPhotos] = useState<GalleryPhoto[]>(localGalleryPhotos);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     const loadPageData = async () => {
       try {
-        const [testimonialRows, photoRows] = await Promise.all([
-          getApprovedTestimonials(),
-          getApprovedGalleryPhotos(),
-        ]);
-
+        const testimonialRows = await getApprovedTestimonials();
         setTestimonials(testimonialRows.length > 0 ? testimonialRows : realTestimonials);
-        setPhotos(photoRows.length > 0 ? photoRows : localGalleryPhotos);
       } catch (error) {
         // Sanity unavailable — keep the fallback content already in state
-        console.warn("Could not load Sanity content, using fallback.", error);
+        console.warn("Could not load Sanity testimonials, using fallback.", error);
         toast({
           title: "Could not load latest content",
           description: "Showing cached content instead.",
@@ -59,10 +51,10 @@ const Testimonials = () => {
     <>
       <section className="bg-secondary text-secondary-foreground py-16 md:py-20 text-center">
         <div className="container">
-          <p className="text-gold uppercase tracking-[0.3em] text-xs font-bold mb-3">Kind Words & Memories</p>
-          <h1 className="font-display text-4xl md:text-6xl text-gold">Testimonials & Gallery</h1>
+          <p className="text-gold uppercase tracking-[0.3em] text-xs font-bold mb-3">Kind Words</p>
+          <h1 className="font-display text-4xl md:text-6xl text-gold">Testimonials</h1>
           <p className="mt-4 text-secondary-foreground/85 max-w-xl mx-auto">
-            A magazine of cheerful moments and heartfelt notes from families and clients.
+            Heartfelt notes from families, clients, and Christmas events.
           </p>
         </div>
       </section>
@@ -93,32 +85,6 @@ const Testimonials = () => {
         )}
       </section>
 
-      <section className="bg-muted/60 py-16 md:py-20">
-        <div className="container">
-          <div className="text-center mb-10">
-            <p className="text-gold uppercase tracking-[0.25em] text-xs font-bold mb-3">Gallery</p>
-            <h2 className="font-display text-3xl md:text-4xl text-secondary">Santa Photos</h2>
-          </div>
-          {photos.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-3">
-              {photos.map((photo) => (
-                <article key={photo.id} className="bg-card border border-border rounded-lg overflow-hidden shadow-card">
-                  <img
-                    src={photo.imageUrl}
-                    alt={photo.title || photo.caption || "North Star Santa gallery photo"}
-                    className="aspect-[4/3] w-full object-cover"
-                    style={{ objectPosition: photo.imagePosition || "center top" }}
-                  />
-                  {photo.caption && <p className="p-4 text-sm font-semibold text-secondary">{photo.caption}</p>}
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyContent label={isSanityConfigured ? "No approved photos are published yet." : "Gallery photos will appear here soon."} />
-          )}
-        </div>
-      </section>
-
       <ShareForm />
     </>
   );
@@ -130,7 +96,6 @@ const ShareForm = () => {
   const [eventType, setEventType] = useState("");
   const [email, setEmail] = useState("");
   const [location, setLocation] = useState("");
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -158,29 +123,6 @@ const ShareForm = () => {
         const payload = await testimonialResponse.json().catch(() => null);
         console.log("[testimonials] API error response body:", payload);
         throw new Error(payload?.error || "Could not submit testimonial.");
-      }
-
-      for (const file of photoFiles) {
-        const imageDataUrl = await fileToDataUrl(file);
-        const photoResponse = await fetch("/api/photos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: `${author || "Guest"} photo`,
-            imageDataUrl,
-            caption: quote.slice(0, 220),
-            submittedBy: author,
-            submittedEmail: email,
-          }),
-        });
-
-        console.log("[photos] API response status:", photoResponse.status, photoResponse.statusText);
-
-        if (!photoResponse.ok) {
-          const payload = await photoResponse.json().catch(() => null);
-          console.log("[photos] API error response body:", payload);
-          throw new Error(payload?.error || "Could not submit one of the photos.");
-        }
       }
 
       setSubmitted(true);
@@ -258,40 +200,10 @@ const ShareForm = () => {
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="t-photos">Photos (optional, up to 3)</Label>
-              <Input
-                id="t-photos"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => setPhotoFiles(Array.from(e.target.files ?? []).slice(0, 3))}
-              />
-              {photoFiles.length > 0 && (
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {photoFiles.map((file) => (
-                    <div key={`${file.name}-${file.size}`} className="flex items-center justify-between rounded-md border border-border bg-muted/60 px-3 py-2 text-sm">
-                      <span className="truncate">{file.name}</span>
-                      <button
-                        type="button"
-                        className="ml-2 text-muted-foreground hover:text-primary"
-                        onClick={() => setPhotoFiles((files) => files.filter((item) => item !== file))}
-                        aria-label={`Remove ${file.name}`}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={saving || !isSanityConfigured}>
               {isSanityConfigured ? (
                 saving ? "Submitting..." : (
-                  <span className="inline-flex items-center gap-2">
-                    <ImagePlus className="h-4 w-4" />
-                    Submit Testimonial
-                  </span>
+                  "Submit Testimonial"
                 )
               ) : "Submissions Opening Soon"}
             </Button>
@@ -304,22 +216,9 @@ const ShareForm = () => {
 
 const EmptyContent = ({ label }: { label: string }) => (
   <div className="bg-card border border-dashed border-border rounded-lg p-8 text-center text-muted-foreground">
-    <ImageOff className="mx-auto mb-3 h-8 w-8 text-gold" />
+    <MessageSquareOff className="mx-auto mb-3 h-8 w-8 text-gold" />
     {label}
   </div>
 );
-
-const fileToDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    if (file.size > 5 * 1024 * 1024) {
-      reject(new Error("Each photo must be 5MB or smaller."));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Could not read photo file."));
-    reader.readAsDataURL(file);
-  });
 
 export default Testimonials;
