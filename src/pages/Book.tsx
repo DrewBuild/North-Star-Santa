@@ -209,8 +209,11 @@ const Book = () => {
         }),
       });
 
+      console.log("[booking] API response status:", response.status, response.statusText);
+
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
+        console.log("[booking] API error response body:", payload);
         throw new Error(payload?.error || "Could not send booking request.");
       }
 

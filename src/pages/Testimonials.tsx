@@ -152,8 +152,11 @@ const ShareForm = () => {
         }),
       });
 
+      console.log("[testimonials] API response status:", testimonialResponse.status, testimonialResponse.statusText);
+
       if (!testimonialResponse.ok) {
         const payload = await testimonialResponse.json().catch(() => null);
+        console.log("[testimonials] API error response body:", payload);
         throw new Error(payload?.error || "Could not submit testimonial.");
       }
 
@@ -171,8 +174,11 @@ const ShareForm = () => {
           }),
         });
 
+        console.log("[photos] API response status:", photoResponse.status, photoResponse.statusText);
+
         if (!photoResponse.ok) {
           const payload = await photoResponse.json().catch(() => null);
+          console.log("[photos] API error response body:", payload);
           throw new Error(payload?.error || "Could not submit one of the photos.");
         }
       }

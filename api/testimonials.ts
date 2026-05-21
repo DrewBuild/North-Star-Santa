@@ -1,22 +1,31 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@sanity/client";
 
-const client = createClient({
-  projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
-  dataset: process.env.VITE_SANITY_DATASET || "production",
-  apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
-  token: process.env.SANITY_WRITE_TOKEN,
-  useCdn: false,
-});
-
 const clean = (value: unknown, max = 500) =>
   typeof value === "string" ? value.trim().slice(0, max) : "";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log("API hit: testimonials");
+  console.log("Sanity project:", process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3 (fallback)");
+  console.log("Token exists:", Boolean(process.env.SANITY_WRITE_TOKEN));
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ success: false, error: "Method not allowed" });
   }
+
+  if (!process.env.SANITY_WRITE_TOKEN) {
+    console.error("SANITY_WRITE_TOKEN is not set — writes will fail");
+    return res.status(500).json({ success: false, error: "Server configuration error. Please contact the site owner." });
+  }
+
+  const client = createClient({
+    projectId: process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3",
+    dataset: process.env.VITE_SANITY_DATASET || "production",
+    apiVersion: process.env.VITE_SANITY_API_VERSION || "2025-01-01",
+    token: process.env.SANITY_WRITE_TOKEN,
+    useCdn: false,
+  });
 
   try {
     const body = req.body ?? {};
@@ -30,6 +39,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ success: false, error: "Name and testimonial are required." });
     }
 
+    console.log("Creating testimonial for:", name);
+
     const created = await client.create({
       _type: "testimonial",
       name,
@@ -42,9 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       submittedAt: new Date().toISOString(),
     });
 
+    console.log("testimonial created:", created._id);
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Testimonial API error:", error);
-    return res.status(500).json({ success: false, error: "Could not submit testimonial." });
+    console.error("Sanity create error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    return res.status(500).json({ success: false, error: "Could not submit testimonial.", detail: msg });
   }
 }
