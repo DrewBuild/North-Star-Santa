@@ -204,12 +204,15 @@ export const getActiveBlockoutDates = async (): Promise<BlockoutDate[]> => {
  * Returns true if the given YYYY-MM-DD date string falls within any active
  * blockout period. Handles single days, date ranges, and yearly repeats.
  */
-export const isDateBlocked = (date: string, blockouts: BlockoutDate[]): boolean => {
-  if (!date || blockouts.length === 0) return false;
+export const isDateBlocked = (date: string, blockouts: BlockoutDate[] | undefined | null): boolean => {
+  if (!date || !blockouts || blockouts.length === 0) return false;
 
   const year = Number(date.slice(0, 4));
 
   for (const b of blockouts) {
+    // Skip malformed records that are missing a startDate
+    if (!b?.startDate) continue;
+
     let start = b.startDate;
     let end = b.endDate ?? b.startDate;
 

@@ -410,6 +410,7 @@ const buildTimeSlots = (startTime: string, endTime: string) => {
 const BookingCalendar = ({
   availability,
   blockedDates,
+  blockoutDates,
   selectedDate,
   selectedDay,
   settings,
