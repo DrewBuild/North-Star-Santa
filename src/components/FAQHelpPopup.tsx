@@ -9,6 +9,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+const CLIENT_EMAIL = "info@northstarsanta.com";
+
 const faqs = [
   {
     question: "I can't submit a booking request.",
@@ -32,7 +34,8 @@ const faqs = [
   },
   {
     question: "How do I contact Santa directly?",
-    answer: "Use the booking form or the contact information listed on the website.",
+    answer: "You can contact North Star Santa directly through email for booking questions or special requests.",
+    email: CLIENT_EMAIL,
   },
 ];
 
@@ -77,7 +80,20 @@ const FAQHelpPopup = () => {
               >
                 {item.question}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/80">{item.answer}</p>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                {item.answer}
+                {"email" in item && item.email && (
+                  <>
+                    {" "}
+                    <a
+                      href={`mailto:${item.email}`}
+                      className="font-semibold text-primary underline underline-offset-4 hover:text-secondary"
+                    >
+                      {item.email}
+                    </a>
+                  </>
+                )}
+              </p>
             </section>
           ))}
         </div>

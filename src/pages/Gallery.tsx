@@ -103,6 +103,15 @@ const PhotoSubmissionForm = () => {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
+    if (photoFiles.length > 1) {
+      toast({
+        title: "One photo at a time",
+        description: "Please upload one photo per submission.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (photoFiles.length === 0) {
       toast({
         title: "Choose a photo",
@@ -196,17 +205,31 @@ const PhotoSubmissionForm = () => {
               />
             </div>
             <div>
-              <Label htmlFor="g-photos">Photos (up to 3)</Label>
+              <Label htmlFor="g-photos">Photo</Label>
               <Input
                 id="g-photos"
                 type="file"
                 accept="image/*"
-                multiple
-                onChange={(e) => setPhotoFiles(Array.from(e.target.files ?? []).slice(0, 3))}
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+
+                  if (files.length > 1) {
+                    setPhotoFiles([]);
+                    e.currentTarget.value = "";
+                    toast({
+                      title: "One photo at a time",
+                      description: "Please upload one photo per submission.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  setPhotoFiles(files);
+                }}
                 required
               />
               {photoFiles.length > 0 && (
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid gap-2">
                   {photoFiles.map((file) => (
                     <div key={`${file.name}-${file.size}`} className="flex items-center justify-between rounded-md border border-border bg-muted/60 px-3 py-2 text-sm">
                       <span className="truncate">{file.name}</span>
