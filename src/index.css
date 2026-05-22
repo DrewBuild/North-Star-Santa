@@ -100,6 +100,103 @@
     50% { box-shadow: 0 0 0 12px hsl(43 88% 62% / 0); }
   }
 
+  .font-christmas-display {
+    font-family: 'Cinzel Decorative', 'Playfair Display', Georgia, serif;
+  }
+
+  .font-christmas-script {
+    font-family: 'Berkshire Swash', 'Playfair Display', Georgia, serif;
+  }
+
+  .hero-title-gold {
+    color: hsl(45 98% 68%);
+    -webkit-text-stroke: 1px hsl(48 100% 82% / 0.42);
+    text-shadow:
+      0 2px 0 hsl(0 72% 28% / 0.9),
+      0 4px 0 hsl(0 58% 20% / 0.42),
+      0 8px 18px hsl(0 78% 18% / 0.68),
+      0 0 30px hsl(43 94% 64% / 0.48);
+  }
+
+  .hero-kicker-glow {
+    text-shadow:
+      0 0 8px hsl(43 95% 70% / 0.65),
+      0 2px 10px hsl(0 75% 20% / 0.55);
+  }
+
+  .hero-script-glow {
+    text-shadow:
+      0 2px 10px hsl(0 70% 18% / 0.78),
+      0 0 18px hsl(43 88% 62% / 0.36);
+  }
+
+  .hero-santa-glow {
+    filter:
+      drop-shadow(0 0 10px hsl(39 80% 94% / 0.42))
+      drop-shadow(0 0 24px hsl(43 92% 66% / 0.45))
+      drop-shadow(-16px 10px 24px hsl(0 74% 38% / 0.24))
+      drop-shadow(18px 12px 26px hsl(113 37% 25% / 0.28))
+      drop-shadow(0 30px 38px hsl(0 0% 0% / 0.48));
+  }
+
+  .santa-hero-figure {
+    position: relative;
+    width: clamp(17.5rem, 74vw, 24.5rem);
+  }
+
+  .santa-hero-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .santa-hand-cta {
+    position: absolute;
+    top: 48%;
+    left: 51%;
+    z-index: 20;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .santa-hand-cta::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 24% 28%, hsl(48 100% 88% / 0.86) 0 0.1rem, transparent 0.18rem),
+      radial-gradient(circle at 78% 32%, hsl(48 100% 84% / 0.72) 0 0.08rem, transparent 0.15rem),
+      radial-gradient(circle at 58% 74%, hsl(39 80% 94% / 0.68) 0 0.08rem, transparent 0.16rem);
+    opacity: 0.72;
+  }
+
+  @media (min-width: 1024px) {
+    .santa-hero-figure {
+      width: clamp(24rem, 42vw, 38rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .santa-hand-cta {
+      height: 2.35rem !important;
+      padding-inline: 0.7rem !important;
+      border-radius: 0.55rem !important;
+      font-size: 0.68rem !important;
+      line-height: 1.15 !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .santa-hand-cta {
+      height: 2.15rem !important;
+      padding-inline: 0.6rem !important;
+      font-size: 0.62rem !important;
+    }
+  }
+
   .bg-festive-cream {
     background:
       radial-gradient(circle at top left, hsl(43 88% 62% / 0.2), transparent 32rem),

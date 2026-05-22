@@ -32,23 +32,38 @@ const Navbar = () => {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-all",
+        "sticky top-0 z-50 w-full transition-all duration-300 ease-out",
         scrolled
-          ? "bg-background/95 backdrop-blur shadow-card border-b border-border"
-          : "bg-background/90 backdrop-blur-md border-b border-border/40",
+          ? "border-b border-gold/45 bg-background/98 shadow-[0_8px_22px_hsl(0_0%_0%_/_0.12),0_1px_0_hsl(43_88%_62%_/_0.28)] backdrop-blur"
+          : "border-b border-gold/45 bg-background/98 shadow-[0_10px_28px_hsl(0_0%_0%_/_0.1),0_1px_0_hsl(43_88%_62%_/_0.28)] backdrop-blur-md",
       )}
     >
-      <div className="container flex h-16 items-center justify-between gap-3 md:h-20">
-        <Link to="/" className="flex min-w-0 items-center gap-2 group">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center md:h-14 md:w-14">
-            <img src={logoImg} alt="North Star Santa logo" className="h-full w-full object-contain drop-shadow-[0_2px_6px_hsl(0_0%_0%_/_0.28)]" />
+      <div
+        className={cn(
+          "container flex items-center justify-between gap-3 transition-all duration-300 ease-out",
+          scrolled ? "h-16 py-1 md:h-20 xl:h-20" : "h-24 py-2 md:h-28 xl:h-32",
+        )}
+      >
+        <Link to="/" className="flex min-w-0 items-center gap-3 group md:gap-5">
+          <span
+            className={cn(
+              "flex shrink-0 items-center justify-center transition-all duration-300 ease-out",
+              scrolled ? "h-12 w-12 md:h-16 md:w-16 xl:h-[4.5rem] xl:w-[4.5rem]" : "h-16 w-16 md:h-24 md:w-24 xl:h-28 xl:w-28",
+            )}
+          >
+            <img src={logoImg} alt="North Star Santa logo" className="h-full w-full object-contain drop-shadow-[0_3px_9px_hsl(0_0%_0%_/_0.32)]" />
           </span>
-          <span className="truncate font-display text-lg font-bold text-gold tracking-wide drop-shadow-sm sm:text-xl md:text-2xl">
+          <span
+            className={cn(
+              "truncate font-display font-bold text-gold tracking-wide drop-shadow-sm transition-all duration-300 ease-out",
+              scrolled ? "text-lg sm:text-xl xl:text-2xl" : "text-xl sm:text-2xl xl:text-3xl",
+            )}
+          >
             North Star Santa
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-4 lg:gap-8">
+        <nav className="hidden xl:flex items-center gap-7">
           {links.map((l) => (
             <NavLink
               key={l.to}
@@ -56,7 +71,7 @@ const Navbar = () => {
               end={l.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "text-sm font-semibold transition-colors hover:text-primary",
+                  "text-sm font-semibold transition-colors hover:text-primary lg:text-[0.95rem]",
                   isActive ? "text-primary" : "text-foreground",
                 )
               }
@@ -66,14 +81,14 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
-          <Button asChild variant="hero" size="lg" className="pulse-gold">
+        <div className="hidden xl:flex items-center gap-3">
+          <Button asChild variant="hero" size="lg" className="pulse-gold shadow-gold">
             <Link to="/book">Book Santa</Link>
           </Button>
         </div>
 
         <button
-          className="shrink-0 rounded-md p-2 text-foreground transition-colors hover:bg-muted md:hidden"
+          className="shrink-0 rounded-md p-2 text-foreground transition-colors hover:bg-muted xl:hidden"
           aria-label="Toggle menu"
           onClick={() => setOpen((o) => !o)}
         >
@@ -82,7 +97,7 @@ const Navbar = () => {
       </div>
 
       {open && (
-        <div className="border-t border-border bg-background/98 shadow-card md:hidden">
+        <div className="border-t border-gold/25 bg-background/98 shadow-card xl:hidden">
           <nav className="container flex flex-col py-4 gap-3">
             {links.map((l) => (
               <NavLink

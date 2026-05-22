@@ -1,4 +1,5 @@
 import heroSantaImg from "@/assets/hero-santa.png";
+import heroSantaCutoutImg from "@/assets/HomeScreensanta.png";
 import logoImg from "@/assets/Santa_logo-removebg-preview.png";
 import carolinaPinesImg from "@/assets/carolina-pines-1.jpg";
 import santaWadeImg from "@/assets/santa-wade.jpg";
@@ -8,7 +9,7 @@ import img9520 from "@/assets/IMG_9520.jpeg";
 import img9947 from "@/assets/IMG_9947.jpeg";
 import type { GalleryPhoto, HelpfulHint, Service, Testimonial } from "@/lib/sanityQueries";
 
-export { heroSantaImg, logoImg };
+export { heroSantaImg, heroSantaCutoutImg, logoImg };
 
 export const realTestimonials: Testimonial[] = [
   {
