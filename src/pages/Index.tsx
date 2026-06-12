@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import Snow from "@/components/Snow";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
+import ChristmasCountdown from "@/components/ChristmasCountdown";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
 import { bioPhotos, fallbackServices, heroSantaCutoutImg, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
@@ -82,9 +82,7 @@ const Home = () => {
                 height={577}
                 className="santa-hero-image hero-santa-glow relative z-10"
               />
-              <Button asChild variant="hero" size="xl" className="santa-hand-cta pulse-gold rounded-xl border border-gold/80 shadow-[0_0_30px_hsl(43_95%_68%_/_0.62),0_10px_28px_hsl(0_68%_20%_/_0.38),-10px_8px_24px_hsl(0_74%_38%_/_0.2),10px_8px_24px_hsl(113_37%_25%_/_0.24)] hover:shadow-[0_0_40px_hsl(43_98%_72%_/_0.78),0_12px_30px_hsl(0_68%_20%_/_0.4)]">
-                <Link to="/book">Book Santa Now</Link>
-              </Button>
+              <ChristmasCountdown />
             </div>
           </div>
         </div>
