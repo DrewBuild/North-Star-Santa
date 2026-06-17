@@ -1,4 +1,5 @@
 import { createClient } from "@sanity/client";
+import { DEFAULT_CONTACT_EMAIL, fromEmail, getNotificationEmail, siteFooterContact } from "./shared/contactEmail.js";
 
 const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
 const dataset = process.env.VITE_SANITY_DATASET || "production";
@@ -120,12 +121,6 @@ const hasOverlapWithExistingBookings = (newStart, newEnd, existingBookings, sele
 
 // ─── Email helpers ─────────────────────────────────────────────────────────
 
-const fromEmail = () =>
-  process.env.EMAIL_FROM || process.env.FROM_EMAIL || "santa@northstarsanta.com";
-
-const adminEmail = () =>
-  process.env.BOOKING_NOTIFICATION_EMAIL || "santa@northstarsanta.com";
-
 const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -175,7 +170,7 @@ const sectionText = (title, rows) => {
   return `${title}\n${"─".repeat(title.length)}\n${content}\n`;
 };
 
-const buildAdminEmailHtml = (booking, sanityId) => {
+const buildAdminEmailHtml = (booking, sanityId, contactEmail = DEFAULT_CONTACT_EMAIL) => {
   const header = `
     <div style="background:#1a3a1a;padding:24px;text-align:center;border-radius:8px 8px 0 0;">
       <h1 style="margin:0;color:#f5c842;font-size:22px;font-family:Georgia,serif;letter-spacing:0.04em;">North Star Santa</h1>
@@ -216,7 +211,7 @@ const buildAdminEmailHtml = (booking, sanityId) => {
       ])}
     </div>
     <div style="background:#f9fafb;padding:12px 24px;border-radius:0 0 8px 8px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#9ca3af;">North Star Santa · santa@northstarsanta.com</p>
+      <p style="margin:0;font-size:12px;color:#9ca3af;">${escapeHtml(siteFooterContact(contactEmail))}</p>
     </div>`;
   return `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;"><div style="max-width:600px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">${header}${body}</div></body></html>`;
 };
@@ -256,7 +251,7 @@ const buildAdminEmailText = (booking, sanityId) => {
   ].join("\n");
 };
 
-const buildCustomerConfirmationHtml = (booking) => {
+const buildCustomerConfirmationHtml = (booking, contactEmail = DEFAULT_CONTACT_EMAIL) => {
   const header = `
     <div style="background:#1a3a1a;padding:24px;text-align:center;border-radius:8px 8px 0 0;">
       <h1 style="margin:0;color:#f5c842;font-size:22px;font-family:Georgia,serif;letter-spacing:0.04em;">North Star Santa</h1>
@@ -285,16 +280,16 @@ const buildCustomerConfirmationHtml = (booking) => {
       <p style="font-size:15px;color:#374151;margin:0;line-height:1.7;">
         Merry Christmas,<br />
         <strong style="color:#1a3a1a;">North Star Santa</strong><br />
-        <a href="mailto:santa@northstarsanta.com" style="color:#b91c1c;text-decoration:none;">santa@northstarsanta.com</a>
+        <a href="mailto:${escapeHtml(contactEmail)}" style="color:#b91c1c;text-decoration:none;">${escapeHtml(contactEmail)}</a>
       </p>
     </div>
     <div style="background:#f9fafb;padding:12px 24px;border-radius:0 0 8px 8px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#9ca3af;">North Star Santa · santa@northstarsanta.com</p>
+      <p style="margin:0;font-size:12px;color:#9ca3af;">${escapeHtml(siteFooterContact(contactEmail))}</p>
     </div>`;
   return `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;"><div style="max-width:600px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">${header}${body}</div></body></html>`;
 };
 
-const buildCustomerConfirmationText = (booking) => {
+const buildCustomerConfirmationText = (booking, contactEmail = DEFAULT_CONTACT_EMAIL) => {
   return [
     `Dear ${booking.fullName || "Friend"},`,
     "",
@@ -309,7 +304,7 @@ const buildCustomerConfirmationText = (booking) => {
     "",
     "Merry Christmas,",
     "North Star Santa",
-    "santa@northstarsanta.com",
+    contactEmail,
   ].filter((l) => l !== undefined).join("\n");
 };
 
@@ -318,7 +313,8 @@ const buildCustomerConfirmationText = (booking) => {
 const sendResendEmail = async ({ to, subject, text, html }) => {
   const resendKey = process.env.RESEND_API_KEY;
   const from = fromEmail();
-  if (!resendKey || !from || !to) return;
+  if (!resendKey) throw new Error("Email service is not configured.");
+  if (!from || !to) throw new Error("Email sender or recipient is missing.");
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -335,9 +331,9 @@ const sendResendEmail = async ({ to, subject, text, html }) => {
   }
 };
 
-const sendBookingEmails = async ({ booking, sanityId }) => {
+const sendBookingEmails = async ({ booking, sanityId, client }) => {
   const messages = [];
-  const admin = adminEmail();
+  const admin = await getNotificationEmail(client);
 
   if (admin) {
     messages.push(
@@ -345,7 +341,7 @@ const sendBookingEmails = async ({ booking, sanityId }) => {
         to: admin,
         subject: `New Booking Request - ${booking.fullName}`,
         text: buildAdminEmailText(booking, sanityId),
-        html: buildAdminEmailHtml(booking, sanityId),
+        html: buildAdminEmailHtml(booking, sanityId, admin),
       }),
     );
   }
@@ -355,18 +351,18 @@ const sendBookingEmails = async ({ booking, sanityId }) => {
       sendResendEmail({
         to: booking.email,
         subject: "Thank You for Contacting North Star Santa",
-        text: buildCustomerConfirmationText(booking),
-        html: buildCustomerConfirmationHtml(booking),
+        text: buildCustomerConfirmationText(booking, admin),
+        html: buildCustomerConfirmationHtml(booking, admin),
       }),
     );
   }
 
   const results = await Promise.allSettled(messages);
-  results.forEach((result) => {
-    if (result.status === "rejected") {
-      console.error("Booking email notification failed:", result.reason);
-    }
-  });
+  const failed = results.find((result) => result.status === "rejected");
+  if (failed) {
+    console.error("Booking email notification failed:", failed.reason);
+    throw failed.reason;
+  }
 };
 
 // ─── Main handler ──────────────────────────────────────────────────────────
@@ -472,12 +468,19 @@ export default async function handler(req, res) {
 
     const created = await client.create({ _type: "bookingRequest", ...booking });
 
-    await sendBookingEmails({ booking: { ...booking }, sanityId: created._id });
+    await sendBookingEmails({ booking: { ...booking }, sanityId: created._id, client });
 
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Sanity create error:", error);
+    console.error("Booking handler error:", error);
     const msg = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ success: false, error: "Could not send booking request.", detail: msg });
+    const emailFailed = /email|resend/i.test(msg);
+    return res.status(500).json({
+      success: false,
+      error: emailFailed
+        ? `Could not send notification email to ${DEFAULT_CONTACT_EMAIL}. Please try again or email Santa directly.`
+        : "Could not send booking request.",
+      detail: msg,
+    });
   }
 }

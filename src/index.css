@@ -104,6 +104,10 @@
     font-family: 'Cinzel Decorative', 'Playfair Display', Georgia, serif;
   }
 
+  .font-luxury-serif {
+    font-family: 'Bodoni Moda', 'Bodoni 72', Didot, 'Playfair Display', Georgia, serif;
+  }
+
   .font-christmas-script {
     font-family: 'Berkshire Swash', 'Playfair Display', Georgia, serif;
   }
@@ -111,6 +115,7 @@
   .hero-title-gold {
     color: hsl(45 98% 68%);
     -webkit-text-stroke: 1px hsl(48 100% 82% / 0.42);
+    letter-spacing: 0.035em;
     text-shadow:
       0 2px 0 hsl(0 72% 28% / 0.9),
       0 4px 0 hsl(0 58% 20% / 0.42),
@@ -183,10 +188,10 @@
   }
 
   .countdown-label {
-    font-family: 'Berkshire Swash', 'Playfair Display', serif;
+    font-family: 'Nunito', Arial, Helvetica, sans-serif;
     font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-weight: 800;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: hsl(43 95% 72%);
     line-height: 1.2;

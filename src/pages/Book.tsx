@@ -40,12 +40,7 @@ const eventTypes = [
   "Other",
 ];
 
-const durationOptions = [
-  { label: "30 minutes", value: 30 },
-  { label: "60 minutes (1 hour)", value: 60 },
-  { label: "90 minutes (1.5 hours)", value: 90 },
-  { label: "120 minutes (2 hours)", value: 120 },
-];
+const DEFAULT_APPOINTMENT_DURATION_MINUTES = 60;
 
 interface FormState {
   firstName: string;
@@ -61,7 +56,6 @@ interface FormState {
   state: string;
   zipCode: string;
   eventType: string;
-  appointmentDuration: string;
   numChildren: string;
   ageRange: string;
   notes: string;
@@ -82,7 +76,6 @@ const initial: FormState = {
   state: "",
   zipCode: "",
   eventType: "",
-  appointmentDuration: "60",
   numChildren: "",
   ageRange: "",
   notes: "",
@@ -213,8 +206,8 @@ const Book = () => {
       isSlotInBlockedWindow(form.time, blockedWindows),
   );
 
-  // Validate the selected time + duration fits within schedule
-  const selectedDurationMinutes = Number(form.appointmentDuration) || 60;
+  // Validate the selected time + default visit duration fits within schedule.
+  const selectedDurationMinutes = DEFAULT_APPOINTMENT_DURATION_MINUTES;
   const appointmentEndMinutes = form.time ? timeToMinutes(form.time) + selectedDurationMinutes : 0;
   const scheduleEndMinutes = selectedDay ? timeToMinutes(selectedDay.end_time) : 0;
   const isAppointmentPastScheduleEnd = Boolean(
@@ -470,27 +463,6 @@ const Book = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <Label htmlFor="appointmentDuration">Appointment Duration *</Label>
-            <Select
-              value={form.appointmentDuration}
-              onValueChange={(v) => setForm((f) => ({ ...f, appointmentDuration: v, time: "" }))}
-            >
-              <SelectTrigger id="appointmentDuration">
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                {durationOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="mt-1 text-xs text-muted-foreground">
-              A 60-minute travel buffer is added after each appointment (except the last of the day).
-            </p>
           </div>
 
           {/* Children / Age */}

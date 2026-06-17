@@ -1,4 +1,5 @@
 import { createClient } from "@sanity/client";
+import { DEFAULT_CONTACT_EMAIL, fromEmail, getNotificationEmail } from "./shared/contactEmail.js";
 
 const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
 const dataset = process.env.VITE_SANITY_DATASET || "production";
@@ -26,6 +27,14 @@ const readJsonBody = async (req) => {
 const cleanText = (value, maxLength = 500) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 const parseDataUrlImage = (dataUrl) => {
   const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
 
@@ -41,6 +50,73 @@ const parseDataUrlImage = (dataUrl) => {
   }
 
   return { buffer, mimeType };
+};
+
+const buildPhotoAdminHtml = (data) => {
+  const rows = [
+    ["Title", data.title],
+    ["Submitted By", data.submittedBy],
+    ["Email", data.submittedEmail],
+    ["Caption", data.caption],
+    ["Image Type", data.mimeType],
+    ["Image Size", data.sizeLabel],
+    ["Sanity ID", data.sanityId],
+    ["Image URL", data.imageUrl],
+    ["Date Submitted", new Date().toLocaleString("en-US")],
+  ]
+    .filter(([, v]) => v)
+    .map(([label, value]) => `<tr><td style="padding:4px 16px 4px 0;color:#6b7280;font-size:14px;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}:</td><td style="padding:4px 0;color:#111827;font-size:14px;word-break:break-word;">${escapeHtml(value)}</td></tr>`)
+    .join("");
+
+  return `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;"><div style="max-width:600px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);"><div style="background:#1a3a1a;padding:24px;text-align:center;border-radius:8px 8px 0 0;"><h1 style="margin:0;color:#f5c842;font-size:22px;font-family:Georgia,serif;">North Star Santa</h1><p style="margin:8px 0 0;color:#d1fae5;font-size:13px;">New Photo Submission</p></div><div style="padding:28px 24px;background:#ffffff;"><p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4b5563;">Submission Details</p><table style="border-collapse:collapse;width:100%;">${rows}</table><p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">This photo is pending review in Sanity Studio before being published.</p></div></div></body></html>`;
+};
+
+const buildPhotoAdminText = (data) =>
+  [
+    "NEW PHOTO SUBMISSION",
+    "",
+    data.title ? `Title: ${data.title}` : "",
+    data.submittedBy ? `Submitted By: ${data.submittedBy}` : "",
+    data.submittedEmail ? `Email: ${data.submittedEmail}` : "",
+    data.caption ? `Caption: ${data.caption}` : "",
+    data.mimeType ? `Image Type: ${data.mimeType}` : "",
+    data.sizeLabel ? `Image Size: ${data.sizeLabel}` : "",
+    data.sanityId ? `Sanity ID: ${data.sanityId}` : "",
+    data.imageUrl ? `Image URL: ${data.imageUrl}` : "",
+    `Date Submitted: ${new Date().toLocaleString("en-US")}`,
+    "",
+    "Pending review in Sanity Studio before publishing.",
+  ].filter(Boolean).join("\n");
+
+const sendResendEmail = async ({ to, subject, text, html }) => {
+  const resendKey = process.env.RESEND_API_KEY;
+  const from = fromEmail();
+  if (!resendKey) throw new Error("Email service is not configured.");
+  if (!from || !to) throw new Error("Email sender or recipient is missing.");
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to, subject, text, html }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Resend failed with status ${response.status}${detail ? `: ${detail.slice(0, 500)}` : ""}`);
+  }
+};
+
+const sendPhotoNotification = async (client, data) => {
+  const admin = await getNotificationEmail(client);
+  await sendResendEmail({
+    to: admin,
+    subject: "New Photo Submission",
+    text: buildPhotoAdminText(data),
+    html: buildPhotoAdminHtml(data),
+  });
 };
 
 export default async function handler(req, res) {
@@ -67,6 +143,7 @@ export default async function handler(req, res) {
     }
 
     const image = parseDataUrlImage(body.imageDataUrl);
+    const sizeLabel = `${Math.round(image.buffer.length / 1024)} KB`;
 
     const asset = await client.assets.upload("image", image.buffer, {
       contentType: image.mimeType,
@@ -88,10 +165,28 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
+    await sendPhotoNotification(client, {
+      title: title || "Submitted photo",
+      caption,
+      submittedBy,
+      submittedEmail,
+      mimeType: image.mimeType,
+      sizeLabel,
+      sanityId: created._id,
+      imageUrl: asset.url,
+    });
+
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Sanity create error:", error);
+    console.error("Photo handler error:", error);
     const msg = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ success: false, error: "Could not submit photo.", detail: msg });
+    const emailFailed = /email|resend/i.test(msg);
+    return res.status(500).json({
+      success: false,
+      error: emailFailed
+        ? `Could not send notification email to ${DEFAULT_CONTACT_EMAIL}. Please try again or email Santa directly.`
+        : "Could not submit photo.",
+      detail: msg,
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@sanity/client";
+import { DEFAULT_CONTACT_EMAIL, fromEmail, getNotificationEmail, siteFooterContact } from "./shared/contactEmail.js";
 
 const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
 const dataset = process.env.VITE_SANITY_DATASET || "production";
@@ -25,12 +26,6 @@ const readJsonBody = async (req) => {
 const cleanText = (value, maxLength = 500) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
-const fromEmail = () =>
-  process.env.EMAIL_FROM || process.env.FROM_EMAIL || "santa@northstarsanta.com";
-
-const adminEmail = () =>
-  process.env.BOOKING_NOTIFICATION_EMAIL || "santa@northstarsanta.com";
-
 const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -39,7 +34,7 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const buildTestimonialAdminHtml = (data) => {
+const buildTestimonialAdminHtml = (data, contactEmail = DEFAULT_CONTACT_EMAIL) => {
   const header = `
     <div style="background:#1a3a1a;padding:24px;text-align:center;border-radius:8px 8px 0 0;">
       <h1 style="margin:0;color:#f5c842;font-size:22px;font-family:Georgia,serif;">North Star Santa</h1>
@@ -72,7 +67,7 @@ const buildTestimonialAdminHtml = (data) => {
       <p style="margin:20px 0 0;font-size:13px;color:#9ca3af;">This testimonial is pending review in Sanity Studio before being published.</p>
     </div>
     <div style="background:#f9fafb;padding:12px 24px;border-radius:0 0 8px 8px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#9ca3af;">North Star Santa · santa@northstarsanta.com</p>
+      <p style="margin:0;font-size:12px;color:#9ca3af;">${escapeHtml(siteFooterContact(contactEmail))}</p>
     </div>`;
 
   return `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;"><div style="max-width:600px;margin:0 auto;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">${header}${body}</div></body></html>`;
@@ -101,7 +96,8 @@ const buildTestimonialAdminText = (data) => {
 const sendResendEmail = async ({ to, subject, text, html }) => {
   const resendKey = process.env.RESEND_API_KEY;
   const from = fromEmail();
-  if (!resendKey || !from || !to) return;
+  if (!resendKey) throw new Error("Email service is not configured.");
+  if (!from || !to) throw new Error("Email sender or recipient is missing.");
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -118,20 +114,16 @@ const sendResendEmail = async ({ to, subject, text, html }) => {
   }
 };
 
-const sendTestimonialNotification = async (data) => {
-  const admin = adminEmail();
+const sendTestimonialNotification = async (client, data) => {
+  const admin = await getNotificationEmail(client);
   if (!admin) return;
 
-  try {
-    await sendResendEmail({
-      to: admin,
-      subject: "New Testimonial Submission",
-      text: buildTestimonialAdminText(data),
-      html: buildTestimonialAdminHtml(data),
-    });
-  } catch (err) {
-    console.error("Testimonial email notification failed:", err);
-  }
+  await sendResendEmail({
+    to: admin,
+    subject: "New Testimonial Submission",
+    text: buildTestimonialAdminText(data),
+    html: buildTestimonialAdminHtml(data, admin),
+  });
 };
 
 export default async function handler(req, res) {
@@ -170,12 +162,19 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
-    await sendTestimonialNotification({ name, email, reviewText, organization, location });
+    await sendTestimonialNotification(client, { name, email, reviewText, organization, location });
 
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Sanity create error:", error);
+    console.error("Testimonial handler error:", error);
     const msg = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ success: false, error: "Could not submit testimonial.", detail: msg });
+    const emailFailed = /email|resend/i.test(msg);
+    return res.status(500).json({
+      success: false,
+      error: emailFailed
+        ? `Could not send notification email to ${DEFAULT_CONTACT_EMAIL}. Please try again or email Santa directly.`
+        : "Could not submit testimonial.",
+      detail: msg,
+    });
   }
 }

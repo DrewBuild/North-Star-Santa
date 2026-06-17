@@ -61,10 +61,10 @@ const Home = () => {
               <p className="hero-kicker-glow mb-5 text-xs font-extrabold uppercase tracking-[0.42em] text-gold md:text-sm lg:text-[0.95rem] animate-fade-in">
                 ⋆ Professional Santa Claus ⋆
               </p>
-              <h1 className="hero-title-gold font-christmas-display max-w-4xl text-5xl font-black uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
+              <h1 className="hero-title-gold font-luxury-serif max-w-4xl text-5xl font-black uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
                 North Star Santa
               </h1>
-              <p className="hero-script-glow font-christmas-script mt-7 max-w-2xl text-2xl leading-snug text-primary-foreground md:text-3xl lg:text-4xl animate-fade-in">
+              <p className="hero-script-glow font-luxury-serif mt-7 max-w-2xl text-2xl font-semibold uppercase leading-snug tracking-[0.08em] text-primary-foreground md:text-3xl lg:text-4xl animate-fade-in">
                 Making Christmas Magic Unforgettable
               </p>
             </div>
