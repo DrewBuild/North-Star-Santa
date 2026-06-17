@@ -1,4 +1,12 @@
 import { createClient } from "@sanity/client";
+import {
+  DEFAULT_CONTACT_EMAIL,
+  formatDetailRowsHtml,
+  formatDetailRowsText,
+  getNotificationEmail,
+  sendResendEmail,
+  wrapEmailHtml,
+} from "./shared/email.js";
 
 const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
 const dataset = process.env.VITE_SANITY_DATASET || "production";
@@ -25,6 +33,24 @@ const readJsonBody = async (req) => {
 
 const cleanText = (value, maxLength = 500) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+
+const sendTestimonialNotification = async (client, data, sanityId) => {
+  const details = [
+    ["Name", data.name],
+    ["Email", data.email],
+    ["Event Type", data.organization],
+    ["Location", data.location],
+    ["Testimony", data.reviewText],
+    ["Sanity document ID", sanityId],
+  ];
+
+  await sendResendEmail({
+    to: await getNotificationEmail(client),
+    subject: "New North Star Santa Testimony Submission",
+    text: `New Testimony Submission\n\n${formatDetailRowsText(details)}`,
+    html: wrapEmailHtml("New Testimony Submission", formatDetailRowsHtml(details)),
+  });
+};
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -62,10 +88,19 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
+    await sendTestimonialNotification(client, { name, email, reviewText, organization, location }, created._id);
+
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Sanity create error:", error);
+    console.error("Testimonial handler error:", error);
     const msg = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ success: false, error: "Could not submit testimonial.", detail: msg });
+    const emailFailed = /email|resend/i.test(msg);
+    return res.status(500).json({
+      success: false,
+      error: emailFailed
+        ? `Could not send notification email to ${DEFAULT_CONTACT_EMAIL}. Please try again or email Santa directly.`
+        : "Could not submit testimonial.",
+      detail: msg,
+    });
   }
 }
