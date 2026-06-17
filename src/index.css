@@ -108,6 +108,17 @@
     font-family: 'Berkshire Swash', 'Playfair Display', Georgia, serif;
   }
 
+  .hero-title {
+    font-family: 'Bodoni Moda', serif;
+    font-weight: 700;
+  }
+
+  .hero-subtitle {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+  }
+
   .hero-title-gold {
     color: hsl(45 98% 68%);
     -webkit-text-stroke: 1px hsl(48 100% 82% / 0.42);
@@ -161,6 +172,60 @@
     overflow: hidden;
   }
 
+  .countdown-card {
+    width: min(16rem, 82vw);
+    border-radius: 0.75rem;
+    border: 1px solid hsl(43 88% 62% / 0.72);
+    background: hsl(0 68% 24% / 0.94);
+    box-shadow:
+      0 0 24px hsl(43 88% 62% / 0.42),
+      0 10px 28px hsl(0 68% 20% / 0.38);
+    padding: 0.7rem 0.9rem;
+    text-align: center;
+  }
+
+  .countdown-label {
+    margin-bottom: 0.4rem;
+    font-family: 'Nunito', Arial, Helvetica, sans-serif;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: hsl(43 95% 72%);
+  }
+
+  .countdown-units {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .countdown-units span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+  }
+
+  .countdown-units strong {
+    font-family: 'Nunito', Arial, Helvetica, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+    color: hsl(45 98% 72%);
+  }
+
+  .countdown-units em {
+    font-style: normal;
+    font-size: 0.5rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: uppercase;
+    color: hsl(39 60% 88% / 0.88);
+  }
+
   .santa-hand-cta::before {
     content: "";
     position: absolute;
@@ -180,7 +245,7 @@
   }
 
   @media (max-width: 768px) {
-    .santa-hand-cta {
+    .santa-hand-cta:not(.countdown-card) {
       height: 2.35rem !important;
       padding-inline: 0.7rem !important;
       border-radius: 0.55rem !important;
@@ -190,10 +255,23 @@
   }
 
   @media (max-width: 480px) {
-    .santa-hand-cta {
+    .santa-hand-cta:not(.countdown-card) {
       height: 2.15rem !important;
       padding-inline: 0.6rem !important;
       font-size: 0.62rem !important;
+    }
+
+    .countdown-card {
+      width: min(13.5rem, 84vw);
+      padding: 0.55rem 0.65rem;
+    }
+
+    .countdown-label {
+      font-size: 0.6rem;
+    }
+
+    .countdown-units strong {
+      font-size: 0.92rem;
     }
   }
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import Snow from "@/components/Snow";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
+import ChristmasCountdown from "@/components/ChristmasCountdown";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
 import { bioPhotos, fallbackServices, heroSantaCutoutImg, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
@@ -61,10 +61,10 @@ const Home = () => {
               <p className="hero-kicker-glow mb-5 text-xs font-extrabold uppercase tracking-[0.42em] text-gold md:text-sm lg:text-[0.95rem] animate-fade-in">
                 ⋆ Professional Santa Claus ⋆
               </p>
-              <h1 className="hero-title-gold font-christmas-display max-w-4xl text-5xl font-black uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
+              <h1 className="hero-title hero-title-gold max-w-4xl text-5xl uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
                 North Star Santa
               </h1>
-              <p className="hero-script-glow font-christmas-script mt-7 max-w-2xl text-2xl leading-snug text-primary-foreground md:text-3xl lg:text-4xl animate-fade-in">
+              <p className="hero-subtitle hero-script-glow mt-7 max-w-2xl text-xl uppercase leading-snug text-primary-foreground md:text-2xl lg:text-3xl animate-fade-in">
                 Making Christmas Magic Unforgettable
               </p>
             </div>
@@ -82,9 +82,7 @@ const Home = () => {
                 height={577}
                 className="santa-hero-image hero-santa-glow relative z-10"
               />
-              <Button asChild variant="hero" size="xl" className="santa-hand-cta pulse-gold rounded-xl border border-gold/80 shadow-[0_0_30px_hsl(43_95%_68%_/_0.62),0_10px_28px_hsl(0_68%_20%_/_0.38),-10px_8px_24px_hsl(0_74%_38%_/_0.2),10px_8px_24px_hsl(113_37%_25%_/_0.24)] hover:shadow-[0_0_40px_hsl(43_98%_72%_/_0.78),0_12px_30px_hsl(0_68%_20%_/_0.4)]">
-                <Link to="/book">Book Santa Now</Link>
-              </Button>
+              <ChristmasCountdown />
             </div>
           </div>
         </div>

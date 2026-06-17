@@ -65,9 +65,13 @@ const queries = {
     }
   `,
   bookedSlots: () => `
-    *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked"]]{
+    *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked", "Confirmed"]]{
       "event_date": eventDate,
       "event_time": eventTime,
+      "appointment_duration_minutes": appointmentDurationMinutes,
+      "blocked_start_time": blockedStartTime,
+      "blocked_end_time": blockedEndTime,
+      "schedule_end_time": scheduleEndTime,
       status
     }
   `,
