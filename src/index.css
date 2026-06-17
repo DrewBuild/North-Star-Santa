@@ -141,12 +141,18 @@
       0 0 18px hsl(43 88% 62% / 0.36);
   }
 
+  .hero-title-container {
+    width: 100%;
+    max-width: none;
+  }
+
   .hero-title-image {
     display: block;
-    width: clamp(560px, 58vw, 1040px);
-    max-width: min(100%, calc(100vw - 3rem));
+    width: clamp(720px, 60vw, 1200px);
+    max-width: min(108%, calc(100vw - 3rem));
     height: auto;
     object-fit: contain;
+    transform: translateX(1.5vw);
     filter:
       drop-shadow(0 3px 0 hsl(0 72% 28% / 0.55))
       drop-shadow(0 10px 20px hsl(0 78% 18% / 0.42))
@@ -263,12 +269,34 @@
     }
   }
 
+  @media (max-width: 1023px) {
+    .hero-title-container {
+      width: 100%;
+      max-width: 100%;
+      transform: none;
+    }
+
+    .hero-title-image {
+      width: min(92vw, 760px);
+      max-width: 100%;
+      margin-inline: auto;
+      transform: none;
+    }
+  }
+
   @media (max-width: 768px) {
+    .hero-title-container {
+      width: 100%;
+      max-width: 100%;
+      transform: none;
+    }
+
     .hero-title-image {
       width: min(94vw, 620px);
       max-width: 100%;
       height: auto;
       margin-inline: auto;
+      transform: none;
     }
 
     .countdown-card {

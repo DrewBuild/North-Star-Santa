@@ -57,8 +57,8 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-hero" />
         <Snow count={22} />
         <div className="relative container min-h-[82vh] pb-0 pt-20 md:min-h-[90vh] md:pt-24 lg:pt-24">
-          <div className="grid min-h-[calc(82vh-5rem)] items-center gap-10 md:min-h-[calc(90vh-6rem)] lg:grid-cols-[minmax(0,1.18fr)_minmax(340px,500px)] lg:gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(410px,560px)]">
-            <div className="relative z-10 flex flex-col items-center self-center pb-8 text-center md:pb-10 lg:items-start lg:pb-20 lg:text-left xl:pb-24">
+          <div className="grid min-h-[calc(82vh-5rem)] items-center gap-10 md:min-h-[calc(90vh-6rem)] lg:grid-cols-[minmax(0,60%)_minmax(340px,40%)] lg:gap-7 xl:grid-cols-[minmax(0,62%)_minmax(410px,38%)]">
+            <div className="hero-title-container relative z-10 flex flex-col items-center self-center pb-8 text-center md:pb-10 lg:items-start lg:pb-20 lg:text-left xl:pb-24">
               <h1 className="animate-fade-in">
                 <img
                   src={titleImg}
