@@ -7,8 +7,7 @@ import ChristmasCountdown from "@/components/ChristmasCountdown";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
 import { bioPhotos, fallbackServices, heroSantaCutoutImg, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
-import bigTitleImg from "@/assets/Bigtitle.png";
-import smallTitleImg from "@/assets/Smalltitle.png";
+import titleImg from "@/assets/title.png";
 
 const bioBlocks = [
   {
@@ -61,22 +60,13 @@ const Home = () => {
           <div className="grid min-h-[calc(82vh-5rem)] items-center gap-10 md:min-h-[calc(90vh-6rem)] lg:grid-cols-[minmax(0,1.18fr)_minmax(340px,500px)] lg:gap-8 xl:grid-cols-[minmax(0,1.25fr)_minmax(410px,560px)]">
             <div className="relative z-10 flex flex-col items-center self-center pb-8 text-center md:pb-10 lg:items-start lg:pb-20 lg:text-left xl:pb-24">
               <h1 className="animate-fade-in">
-                <span className="hero-title-stack" aria-label="North Star Santa making christmas magic unforgettable">
-                  <img
-                    src={bigTitleImg}
-                    alt="North Star Santa"
-                    width={825}
-                    height={302}
-                    className="hero-title-big"
-                  />
-                  <img
-                    src={smallTitleImg}
-                    alt="making christmas magic unforgettable"
-                    width={701}
-                    height={356}
-                    className="hero-title-small"
-                  />
-                </span>
+                <img
+                  src={titleImg}
+                  alt="North Star Santa making Christmas magic unforgettable"
+                  width={2508}
+                  height={627}
+                  className="hero-title-image"
+                />
               </h1>
             </div>
 

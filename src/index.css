@@ -141,35 +141,16 @@
       0 0 18px hsl(43 88% 62% / 0.36);
   }
 
-  .hero-title-stack {
-    display: flex;
-    width: min(54vw, 850px);
+  .hero-title-image {
+    display: block;
+    width: clamp(560px, 58vw, 1040px);
     max-width: min(100%, calc(100vw - 3rem));
-    flex-direction: column;
-    align-items: flex-start;
-    gap: clamp(0.15rem, 0.45vw, 0.45rem);
+    height: auto;
+    object-fit: contain;
     filter:
       drop-shadow(0 3px 0 hsl(0 72% 28% / 0.55))
       drop-shadow(0 10px 20px hsl(0 78% 18% / 0.42))
       drop-shadow(0 0 22px hsl(43 94% 64% / 0.36));
-  }
-
-  .hero-title-big,
-  .hero-title-small {
-    display: block;
-    height: auto;
-    object-fit: contain;
-  }
-
-  .hero-title-big {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .hero-title-small {
-    width: 84%;
-    max-width: 100%;
-    margin-top: clamp(-0.35rem, -0.35vw, -0.12rem);
   }
 
   .hero-santa-glow {
@@ -283,21 +264,11 @@
   }
 
   @media (max-width: 768px) {
-    .hero-title-stack {
-      width: min(92vw, 560px);
-      max-width: calc(100vw - 2rem);
-      align-items: center;
+    .hero-title-image {
+      width: min(94vw, 620px);
+      max-width: 100%;
+      height: auto;
       margin-inline: auto;
-      gap: 0.15rem;
-    }
-
-    .hero-title-big {
-      width: 100%;
-    }
-
-    .hero-title-small {
-      width: 88%;
-      margin-top: -0.2rem;
     }
 
     .countdown-card {
