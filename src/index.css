@@ -144,6 +144,7 @@
   .hero-title-container {
     width: 100%;
     max-width: none;
+    align-items: center !important;
     transform: translate(-4vw, -7vh);
   }
 
@@ -170,7 +171,7 @@
 
   .santa-hero-figure {
     position: relative;
-    width: clamp(17.5rem, 74vw, 24.5rem);
+    width: clamp(16rem, 67vw, 22rem);
   }
 
   .santa-hero-image {
@@ -178,6 +179,15 @@
     width: 100%;
     height: auto;
     object-fit: contain;
+    transition: filter 0.32s ease, transform 0.32s ease;
+  }
+
+  .santa-hero-image:hover {
+    filter:
+      drop-shadow(0 0 10px hsl(43 96% 72% / 0.72))
+      drop-shadow(0 0 22px hsl(48 100% 88% / 0.46))
+      drop-shadow(0 22px 34px hsl(0 0% 0% / 0.38));
+    transform: translateY(-0.15rem);
   }
 
   .countdown-card {
@@ -240,7 +250,7 @@
 
   @media (min-width: 1024px) {
     .santa-hero-figure {
-      width: clamp(24rem, 42vw, 38rem);
+      width: clamp(21.5rem, 37vw, 33.5rem);
     }
   }
 
