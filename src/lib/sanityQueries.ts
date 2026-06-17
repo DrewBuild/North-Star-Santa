@@ -80,8 +80,7 @@ export interface AvailabilityDay {
 export interface BookedSlot {
   event_date: string;
   event_time: string;
-  appointment_duration_minutes?: number | null;
-  status: "New" | "Contacted" | "Confirmed" | "Booked";
+  status: "New" | "Contacted" | "Booked";
 }
 
 export const approvedTestimonialsQuery = `
@@ -141,10 +140,9 @@ export const siteSettingsQuery = `
 `;
 
 export const bookedSlotsQuery = `
-  *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked", "Confirmed"]]{
+  *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked"]]{
     "event_date": eventDate,
     "event_time": eventTime,
-    "appointment_duration_minutes": appointmentDurationMinutes,
     status
   }
 `;

@@ -58,20 +58,20 @@ const Testimonials = () => {
         </div>
       </section>
 
-      <section className="container py-12 md:py-16">
+      <section className="container py-16 md:py-20">
         {loading ? (
           <p className="text-center text-muted-foreground">Loading testimonials...</p>
         ) : testimonials.length > 0 ? (
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
             {testimonials.map((testimonial, i) => (
               <Reveal key={testimonial.id} delay={(i % 4) * 80}>
-                <article className="h-full bg-card border border-border rounded-lg p-5 md:p-6 shadow-card hover:shadow-elegant hover:-translate-y-1 transition-all relative">
-                  <Quote className="absolute -top-2.5 left-5 h-7 w-7 text-gold fill-gold" />
-                  <p className="font-display italic text-base md:text-lg text-foreground/90 leading-relaxed mt-3">
+                <article className="h-full bg-card border border-border rounded-lg p-8 shadow-card hover:shadow-elegant hover:-translate-y-1 transition-all relative">
+                  <Quote className="absolute -top-3 left-6 h-10 w-10 text-gold fill-gold" />
+                  <p className="font-display italic text-xl md:text-2xl text-foreground/90 leading-relaxed mt-4">
                     "{testimonial.reviewText}"
                   </p>
-                  <p className="mt-4 text-xs font-semibold text-secondary">
-                    — {testimonial.name}
+                  <p className="mt-6 text-sm font-semibold text-secondary">
+                    - {testimonial.name}
                     {testimonial.organization && <span className="text-muted-foreground font-normal">, {testimonial.organization}</span>}
                     {testimonial.location && <span className="text-muted-foreground font-normal">, {testimonial.location}</span>}
                   </p>

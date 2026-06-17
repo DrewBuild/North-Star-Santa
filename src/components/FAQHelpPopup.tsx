@@ -9,8 +9,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { DEFAULT_CONTACT_EMAIL } from "@/lib/contact";
 import { getSiteSettings } from "@/lib/sanityQueries";
+
+const FALLBACK_CONTACT_EMAIL = "support@northstarsanta.com";
 
 const faqs = [
   {
@@ -41,7 +42,7 @@ const faqs = [
 ];
 
 const FAQHelpPopup = () => {
-  const [contactEmail, setContactEmail] = useState(DEFAULT_CONTACT_EMAIL);
+  const [contactEmail, setContactEmail] = useState(FALLBACK_CONTACT_EMAIL);
 
   useEffect(() => {
     const loadContactEmail = async () => {
@@ -53,7 +54,7 @@ const FAQHelpPopup = () => {
           setContactEmail(nextEmail);
         }
       } catch {
-        setContactEmail(DEFAULT_CONTACT_EMAIL);
+        setContactEmail(FALLBACK_CONTACT_EMAIL);
       }
     };
 
