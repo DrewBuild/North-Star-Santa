@@ -141,6 +141,18 @@
       0 0 18px hsl(43 88% 62% / 0.36);
   }
 
+  .hero-title-image {
+    display: block;
+    width: min(900px, 90vw);
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    filter:
+      drop-shadow(0 3px 0 hsl(0 72% 28% / 0.55))
+      drop-shadow(0 10px 20px hsl(0 78% 18% / 0.42))
+      drop-shadow(0 0 22px hsl(43 94% 64% / 0.36));
+  }
+
   .hero-santa-glow {
     filter:
       drop-shadow(0 0 10px hsl(39 80% 94% / 0.42))
@@ -173,6 +185,7 @@
   }
 
   .countdown-card {
+    left: 54%;
     width: min(16rem, 82vw);
     border-radius: 0.75rem;
     border: 1px solid hsl(43 88% 62% / 0.72);
@@ -242,9 +255,42 @@
     .santa-hero-figure {
       width: clamp(24rem, 42vw, 38rem);
     }
+
+    .countdown-card {
+      left: 56%;
+    }
   }
 
   @media (max-width: 768px) {
+    .hero-title-image {
+      width: min(34rem, 92vw);
+      margin-inline: auto;
+    }
+
+    .countdown-card {
+      left: 51%;
+      width: min(12rem, 72vw);
+      padding: 0.48rem 0.56rem;
+    }
+
+    .countdown-label {
+      margin-bottom: 0.3rem;
+      font-size: 0.55rem;
+      letter-spacing: 0.055em;
+    }
+
+    .countdown-units {
+      gap: 0.26rem;
+    }
+
+    .countdown-units strong {
+      font-size: 0.82rem;
+    }
+
+    .countdown-units em {
+      font-size: 0.4rem;
+    }
+
     .santa-hand-cta:not(.countdown-card) {
       height: 2.35rem !important;
       padding-inline: 0.7rem !important;
@@ -262,16 +308,20 @@
     }
 
     .countdown-card {
-      width: min(13.5rem, 84vw);
-      padding: 0.55rem 0.65rem;
+      width: min(10.8rem, 70vw);
+      padding: 0.42rem 0.48rem;
     }
 
     .countdown-label {
-      font-size: 0.6rem;
+      font-size: 0.48rem;
     }
 
     .countdown-units strong {
-      font-size: 0.92rem;
+      font-size: 0.72rem;
+    }
+
+    .countdown-units em {
+      font-size: 0.34rem;
     }
   }
 

@@ -7,6 +7,7 @@ import ChristmasCountdown from "@/components/ChristmasCountdown";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
 import { bioPhotos, fallbackServices, heroSantaCutoutImg, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
+import titleImg from "@/assets/title.png";
 
 const bioBlocks = [
   {
@@ -61,12 +62,15 @@ const Home = () => {
               <p className="hero-kicker-glow mb-5 text-xs font-extrabold uppercase tracking-[0.42em] text-gold md:text-sm lg:text-[0.95rem] animate-fade-in">
                 ⋆ Professional Santa Claus ⋆
               </p>
-              <h1 className="hero-title hero-title-gold max-w-4xl text-5xl uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
-                North Star Santa
+              <h1 className="animate-fade-in">
+                <img
+                  src={titleImg}
+                  alt="North Star Santa making Christmas magic unforgettable"
+                  width={2508}
+                  height={627}
+                  className="hero-title-image"
+                />
               </h1>
-              <p className="hero-subtitle hero-script-glow mt-7 max-w-2xl text-xl uppercase leading-snug text-primary-foreground md:text-2xl lg:text-3xl animate-fade-in">
-                Making Christmas Magic Unforgettable
-              </p>
             </div>
 
             <div className="santa-hero-figure z-0 mx-auto -mb-1 self-end">
