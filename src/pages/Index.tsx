@@ -68,6 +68,7 @@ const Home = () => {
                   className="hero-title-image"
                 />
               </h1>
+              <ChristmasCountdown />
             </div>
 
             <div className="santa-hero-figure z-0 mx-auto -mb-1 self-end">
@@ -83,7 +84,6 @@ const Home = () => {
                 height={577}
                 className="santa-hero-image hero-santa-glow relative z-10"
               />
-              <ChristmasCountdown />
             </div>
           </div>
         </div>

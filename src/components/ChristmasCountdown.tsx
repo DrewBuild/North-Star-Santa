@@ -32,7 +32,7 @@ const ChristmasCountdown = () => {
   }, []);
 
   return (
-    <div className="santa-hand-cta countdown-card" aria-label="Countdown until Christmas">
+    <div className="countdown-card" aria-label="Countdown until Christmas">
       <p className="countdown-label">Countdown Until Christmas</p>
       <div className="countdown-units">
         <span><strong>{timeLeft.days}</strong><em>Days</em></span>
