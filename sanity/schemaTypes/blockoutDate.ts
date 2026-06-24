@@ -1,5 +1,18 @@
 import { defineField, defineType } from "sanity";
 
+const timePattern = /^(([01]?\d|2[0-3]):[0-5]\d|([1-9]|1[0-2]):[0-5]\d\s?(AM|PM|am|pm))$/;
+
+const formatTime = (time?: string) => {
+  if (!time) return "";
+  const value = time.trim();
+  const match12 = value.match(/^([1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i);
+  if (match12) return `${match12[1]}:${match12[2]} ${match12[3].toUpperCase()}`;
+  const [hour, minute] = value.slice(0, 5).split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return value;
+  const suffix = hour >= 12 ? "PM" : "AM";
+  return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${suffix}`;
+};
+
 export default defineType({
   name: "blockoutDate",
   title: "Blockout Date",
@@ -33,28 +46,28 @@ export default defineType({
     }),
     defineField({
       name: "startTime",
-      title: "Blocked From (HH:MM, 24-hour)",
+      title: "Blocked From",
       type: "string",
-      description: "Only applies when Full Day Block is off.",
+      description: "Use regular time, e.g. 2:00 PM. Existing 24-hour values such as 14:00 are also accepted.",
       hidden: ({ document }) => document?.isFullDay !== false,
       validation: (Rule) =>
         Rule.custom((value, context) => {
           if (context.document?.isFullDay !== false) return true;
           if (!value) return "Start time is required for partial-day blockouts.";
-          return /^([01]\d|2[0-3]):[0-5]\d$/.test(value) || "Use 24-hour HH:mm format, e.g. 09:00.";
+          return timePattern.test(value.trim()) || "Use regular time, e.g. 2:00 PM.";
         }),
     }),
     defineField({
       name: "endTime",
-      title: "Blocked Until (HH:MM, 24-hour)",
+      title: "Blocked Until",
       type: "string",
-      description: "Only applies when Full Day Block is off.",
+      description: "Use regular time, e.g. 4:00 PM. Existing 24-hour values such as 16:00 are also accepted.",
       hidden: ({ document }) => document?.isFullDay !== false,
       validation: (Rule) =>
         Rule.custom((value, context) => {
           if (context.document?.isFullDay !== false) return true;
           if (!value) return "End time is required for partial-day blockouts.";
-          return /^([01]\d|2[0-3]):[0-5]\d$/.test(value) || "Use 24-hour HH:mm format, e.g. 12:00.";
+          return timePattern.test(value.trim()) || "Use regular time, e.g. 4:00 PM.";
         }),
     }),
     defineField({
@@ -86,13 +99,17 @@ export default defineType({
       endDate: "endDate",
       active: "active",
       repeatYearly: "repeatYearly",
+      isFullDay: "isFullDay",
+      startTime: "startTime",
+      endTime: "endTime",
     },
-    prepare({ title, startDate, endDate, active, repeatYearly }) {
+    prepare({ title, startDate, endDate, active, repeatYearly, isFullDay, startTime, endTime }) {
       const range = endDate && endDate !== startDate ? `${startDate} – ${endDate}` : startDate;
+      const timeRange = isFullDay === false ? `, ${formatTime(startTime)} - ${formatTime(endTime)}` : "";
       const flags = [repeatYearly && "repeats yearly", !active && "inactive"].filter(Boolean).join(", ");
       return {
         title: title ?? "Untitled Blockout",
-        subtitle: flags ? `${range} (${flags})` : range,
+        subtitle: flags ? `${range}${timeRange} (${flags})` : `${range}${timeRange}`,
       };
     },
   },

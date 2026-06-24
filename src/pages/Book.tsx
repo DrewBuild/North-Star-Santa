@@ -15,6 +15,14 @@ import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
+  DEFAULT_APPOINTMENT_DURATION_MINUTES,
+  formatTime12Hour,
+  getBlockedWindow,
+  isValidAvailableStartTime,
+  timeToMinutes,
+  type BlockedWindow,
+} from "@/lib/bookingAvailability";
+import {
   type AvailabilityDay,
   type BlockoutDate,
   type BookedSlot,
@@ -43,8 +51,10 @@ const eventTypes = [
 interface FormState {
   firstName: string;
   lastName: string;
+  companyName: string;
   email: string;
   phone: string;
+  preferredContactMethod: string;
   date: string;
   time: string;
   eventType: string;
@@ -62,8 +72,10 @@ interface FormState {
 const initial: FormState = {
   firstName: "",
   lastName: "",
+  companyName: "",
   email: "",
   phone: "",
+  preferredContactMethod: "",
   date: "",
   time: "",
   eventType: "",
@@ -147,20 +159,53 @@ const Book = () => {
   const isOutsideHours = Boolean(
     form.time &&
       selectedDay?.is_available &&
-      (form.time < selectedDay.start_time.slice(0, 5) || form.time > selectedDay.end_time.slice(0, 5)),
+      (form.time < selectedDay.start_time.slice(0, 5) || form.time >= selectedDay.end_time.slice(0, 5)),
   );
-  const isBookedSlot = bookedSlots.some(
-    (slot) => slot.event_date === form.date && slot.event_time.slice(0, 5) === form.time,
+
+  const selectedDurationMinutes = DEFAULT_APPOINTMENT_DURATION_MINUTES;
+  const scheduleEndTime = selectedDay?.end_time.slice(0, 5) ?? "";
+  const blockedWindows = useMemo<BlockedWindow[]>(() => {
+    if (!form.date || !scheduleEndTime) return [];
+    return bookedSlots
+      .filter((slot) => slot.event_date === form.date)
+      .map((slot) => getBlockedWindow(slot, scheduleEndTime))
+      .filter((window): window is BlockedWindow => Boolean(window));
+  }, [bookedSlots, form.date, scheduleEndTime]);
+
+  const appointmentEndMinutes = form.time ? timeToMinutes(form.time) + selectedDurationMinutes : 0;
+  const scheduleEndMinutes = scheduleEndTime ? timeToMinutes(scheduleEndTime) : 0;
+  const isAppointmentPastScheduleEnd = Boolean(
+    form.time && selectedDay?.is_available && appointmentEndMinutes > scheduleEndMinutes,
   );
-  const cannotBookSelectedTime = isUnavailableDay || isBlockedDate || isBlockedTime || isOutsideHours || isBookedSlot;
+  const isBookedSlot = Boolean(
+    form.time &&
+      scheduleEndTime &&
+      !isValidAvailableStartTime({
+        startTime: form.time,
+        scheduleEndTime,
+        appointmentDurationMinutes: selectedDurationMinutes,
+        blockedWindows,
+      }),
+  );
+  const cannotBookSelectedTime =
+    isUnavailableDay ||
+    isBlockedDate ||
+    isBlockedTime ||
+    isOutsideHours ||
+    isBookedSlot ||
+    isAppointmentPastScheduleEnd;
   const timeSlots = useMemo(() => {
     if (!selectedDay?.is_available || isBlockedDate) return [];
-    return buildTimeSlots(selectedDay.start_time, selectedDay.end_time);
-  }, [isBlockedDate, selectedDay]);
-  const bookedTimesForSelectedDate = useMemo(
-    () => bookedSlots.filter((slot) => slot.event_date === form.date).map((slot) => slot.event_time.slice(0, 5)),
-    [bookedSlots, form.date],
-  );
+    return buildTimeSlots(selectedDay.start_time, selectedDay.end_time).filter((time) => {
+      if (form.date && isTimeBlocked(form.date, time, blockoutDates)) return false;
+      return isValidAvailableStartTime({
+        startTime: time,
+        scheduleEndTime: selectedDay.end_time,
+        appointmentDurationMinutes: selectedDurationMinutes,
+        blockedWindows,
+      });
+    });
+  }, [blockedWindows, blockoutDates, form.date, isBlockedDate, selectedDay, selectedDurationMinutes]);
   const location = [
     form.streetAddress,
     form.apartment,
@@ -183,11 +228,17 @@ const Book = () => {
 
     if (cannotBookSelectedTime) {
       toast({
-        title: isBlockedDate ? "Santa is unavailable on this date" : "That time is not available",
+        title: isBlockedDate
+          ? "Santa is unavailable on this date"
+          : isAppointmentPastScheduleEnd
+            ? "Appointment extends past Santa's schedule"
+            : "That time is not available",
         description: isBlockedDate
           ? BLOCKED_DATE_MESSAGE
           : isBlockedTime
             ? BLOCKED_TIME_MESSAGE
+            : isAppointmentPastScheduleEnd
+              ? "Please choose an earlier start time so the appointment fits within Santa's available hours."
             : "Please choose a date and time inside Santa's available booking window.",
         variant: "destructive",
       });
@@ -202,13 +253,22 @@ const Book = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullName: `${form.firstName} ${form.lastName}`.trim(),
+          companyName: form.companyName,
           email: form.email,
           phone: form.phone,
+          preferredContactMethod: form.preferredContactMethod,
           eventType: form.eventType,
           eventDate: form.date,
           eventTime: form.time,
           eventLocation: location,
-          numberOfGuests: Number(form.numChildren),
+          streetAddress: form.streetAddress,
+          apartment: form.apartment,
+          city: form.city,
+          state: form.state,
+          zipCode: form.zipCode,
+          appointmentDuration: selectedDurationMinutes,
+          scheduleEndTime,
+          numberOfGuests: form.numChildren ? Number(form.numChildren) : undefined,
           message: [
             form.notes,
             form.ageRange ? `Age range: ${form.ageRange}` : "",
@@ -294,6 +354,56 @@ const Book = () => {
               <Label htmlFor="phone">Phone Number *</Label>
               <Input id="phone" type="tel" value={form.phone} onChange={update("phone")} required />
             </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="preferredContactMethod">Preferred Contact Method (optional)</Label>
+              <Select value={form.preferredContactMethod} onValueChange={(v) => setForm((f) => ({ ...f, preferredContactMethod: v }))}>
+                <SelectTrigger id="preferredContactMethod">
+                  <SelectValue placeholder="Select a preferred contact method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Email">Email</SelectItem>
+                  <SelectItem value="Phone call">Phone call</SelectItem>
+                  <SelectItem value="Text message">Text message</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="companyName">Company Name (optional)</Label>
+              <Input id="companyName" value={form.companyName} onChange={update("companyName")} placeholder="Organization or company" />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="streetAddress">Street Address *</Label>
+              <Input id="streetAddress" value={form.streetAddress} onChange={update("streetAddress")} required />
+            </div>
+            <div>
+              <Label htmlFor="apartment">Apartment / Suite (optional)</Label>
+              <Input id="apartment" value={form.apartment} onChange={update("apartment")} />
+            </div>
+            <div>
+              <Label htmlFor="city">City *</Label>
+              <Input id="city" value={form.city} onChange={update("city")} required />
+            </div>
+            <div>
+              <Label htmlFor="state">State *</Label>
+              <Input id="state" value={form.state} onChange={update("state")} maxLength={2} placeholder="NC" required />
+            </div>
+            <div>
+              <Label htmlFor="zipCode">ZIP Code *</Label>
+              <Input id="zipCode" inputMode="numeric" value={form.zipCode} onChange={update("zipCode")} required />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="eventType">Event Type *</Label>
+              <Select value={form.eventType} onValueChange={(v) => setForm((f) => ({ ...f, eventType: v }))}>
+                <SelectTrigger id="eventType">
+                  <SelectValue placeholder="Select an event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {eventTypes.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <BookingCalendar
               availability={availability}
               blockoutDates={blockoutDates}
@@ -301,7 +411,9 @@ const Book = () => {
               selectedDay={selectedDay}
               timeSlots={timeSlots}
               bookedSlots={bookedSlots}
-              bookedTimesForSelectedDate={bookedTimesForSelectedDate}
+              blockedWindows={blockedWindows}
+              selectedDuration={selectedDurationMinutes}
+              scheduleEndTime={scheduleEndTime}
               selectedTime={form.time}
               dateBlockMessage={dateBlockMessage}
               timeBlockMessage={timeBlockMessage}
@@ -331,50 +443,17 @@ const Book = () => {
                 isOutsideHours,
                 isUnavailableDay,
                 isBookedSlot,
+                isAppointmentPastScheduleEnd,
               }}
             />
-            <div className="md:col-span-2">
-              <Label htmlFor="eventType">Event Type *</Label>
-              <Select value={form.eventType} onValueChange={(v) => setForm((f) => ({ ...f, eventType: v }))}>
-                <SelectTrigger id="eventType">
-                  <SelectValue placeholder="Select an event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {eventTypes.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="streetAddress">Street Address *</Label>
-              <Input id="streetAddress" value={form.streetAddress} onChange={update("streetAddress")} required />
-            </div>
             <div>
-              <Label htmlFor="apartment">Apartment / Suite (optional)</Label>
-              <Input id="apartment" value={form.apartment} onChange={update("apartment")} />
-            </div>
-            <div>
-              <Label htmlFor="city">City *</Label>
-              <Input id="city" value={form.city} onChange={update("city")} required />
-            </div>
-            <div>
-              <Label htmlFor="state">State *</Label>
-              <Input id="state" value={form.state} onChange={update("state")} maxLength={2} placeholder="NC" required />
-            </div>
-            <div>
-              <Label htmlFor="zipCode">ZIP Code *</Label>
-              <Input id="zipCode" inputMode="numeric" value={form.zipCode} onChange={update("zipCode")} required />
-            </div>
-            <div>
-              <Label htmlFor="numChildren">Number of Children *</Label>
+              <Label htmlFor="numChildren">Number of Children (optional)</Label>
               <Input
                 id="numChildren"
                 type="number"
                 min={0}
                 value={form.numChildren}
                 onChange={update("numChildren")}
-                required
               />
             </div>
             <div>
@@ -406,13 +485,6 @@ const Book = () => {
 };
 
 const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-const formatTime = (time: string) => {
-  const [hour, minute] = time.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hour, minute, 0, 0);
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-};
 
 const toDateInputValue = (date: Date) => {
   const year = date.getFullYear();
@@ -452,7 +524,9 @@ const BookingCalendar = ({
   selectedDay,
   timeSlots,
   bookedSlots,
-  bookedTimesForSelectedDate,
+  blockedWindows,
+  selectedDuration,
+  scheduleEndTime,
   selectedTime,
   dateBlockMessage,
   timeBlockMessage,
@@ -466,7 +540,9 @@ const BookingCalendar = ({
   selectedDay: AvailabilityDay | null;
   timeSlots: string[];
   bookedSlots: BookedSlot[];
-  bookedTimesForSelectedDate: string[];
+  blockedWindows: BlockedWindow[];
+  selectedDuration: number;
+  scheduleEndTime: string;
   selectedTime: string;
   dateBlockMessage: string | null;
   timeBlockMessage: string | null;
@@ -479,6 +555,7 @@ const BookingCalendar = ({
     isOutsideHours: boolean;
     isUnavailableDay: boolean;
     isBookedSlot: boolean;
+    isAppointmentPastScheduleEnd: boolean;
   };
 }) => {
   const openDays = availability.filter((day) => day.is_available);
@@ -491,8 +568,19 @@ const BookingCalendar = ({
     const day = availability.find((item) => item.day_of_week === getDayOfWeek(dateValue));
     if (!day?.is_available) return false;
     const slots = buildTimeSlots(day.start_time, day.end_time);
-    const bookedTimes = bookedSlots.filter((slot) => slot.event_date === dateValue).map((slot) => slot.event_time.slice(0, 5));
-    return slots.length > 0 && slots.every((slot) => bookedTimes.includes(slot) || isTimeBlocked(dateValue, slot, blockoutDates));
+    const windows = bookedSlots
+      .filter((slot) => slot.event_date === dateValue)
+      .map((slot) => getBlockedWindow(slot, day.end_time))
+      .filter((window): window is BlockedWindow => Boolean(window));
+    return slots.length > 0 && slots.every((slot) => {
+      if (isTimeBlocked(dateValue, slot, blockoutDates)) return true;
+      return !isValidAvailableStartTime({
+        startTime: slot,
+        scheduleEndTime: day.end_time,
+        appointmentDurationMinutes: selectedDuration,
+        blockedWindows: windows,
+      });
+    });
   };
 
   const disabledDate = (date: Date) => {
@@ -570,7 +658,7 @@ const BookingCalendar = ({
                 openDays.map((day) => (
                   <div key={day.day_of_week} className="flex min-w-[210px] items-center gap-3 rounded-md border border-border px-3 py-2 text-sm">
                     <span className="font-semibold">{dayNames[day.day_of_week]}</span>
-                    <span className="whitespace-nowrap text-muted-foreground">{formatTime(day.start_time)} - {formatTime(day.end_time)}</span>
+                    <span className="whitespace-nowrap text-muted-foreground">{formatTime12Hour(day.start_time)} - {formatTime12Hour(day.end_time)}</span>
                   </div>
                 ))
               ) : (
@@ -584,25 +672,20 @@ const BookingCalendar = ({
             {selectedDate && timeSlots.length > 0 ? (
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {timeSlots.map((time) => {
-                  const dateValue = selectedDate ? toDateInputValue(selectedDate) : "";
-                  const blockedByTime = isTimeBlocked(dateValue, time, blockoutDates);
-                  const unavailable = blockedByTime || bookedTimesForSelectedDate.includes(time);
-
                   return (
                     <button
                       type="button"
                       key={time}
                       onClick={() => onTimeSelect(time)}
-                      disabled={unavailable}
-                      aria-label={blockedByTime ? `${formatTime(time)} unavailable` : undefined}
+                      aria-label={`${formatTime12Hour(time)} available`}
                       className={cn(
-                        "rounded-md border border-border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:line-through",
+                        "rounded-md border border-border px-3 py-2 text-sm font-semibold transition-colors",
                         selectedTime === time
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-background hover:bg-secondary/10 hover:text-secondary",
                       )}
                     >
-                      {formatTime(time)}
+                      {formatTime12Hour(time)}
                     </button>
                   );
                 })}
@@ -612,8 +695,10 @@ const BookingCalendar = ({
                 {selectedDate ? "No start times are available for that date." : "Select an open date on the calendar to see times."}
               </p>
             )}
-            {(bookedTimesForSelectedDate.length > 0 || timeSlots.some((time) => selectedDate && isTimeBlocked(toDateInputValue(selectedDate), time, blockoutDates))) && (
-              <p className="mt-3 text-xs text-muted-foreground">Crossed-out times are unavailable.</p>
+            {(blockedWindows.length > 0 || (selectedDate && scheduleEndTime)) && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Times shown are valid start times after appointment duration, existing bookings, and travel buffers.
+              </p>
             )}
           </div>
         </div>
@@ -634,19 +719,21 @@ const BookingCalendar = ({
           {timeBlockMessage}
         </p>
       )}
-      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBlockedTime && !status.isBookedSlot && (
+      {selectedDate && selectedDay?.is_available && selectedTime && !status.isOutsideHours && !status.blockedReason && !status.isBlockedDate && !status.isBlockedTime && !status.isBookedSlot && !status.isAppointmentPastScheduleEnd && (
         <p className="mt-4 rounded-md bg-secondary/10 px-4 py-3 text-sm font-semibold text-secondary">
-          Selected: {selectedDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at {formatTime(selectedTime)} EST
+          Selected: {selectedDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at {formatTime12Hour(selectedTime)} EST
         </p>
       )}
-      {(status.isUnavailableDay || status.isBlockedDate || status.blockedReason || status.isBlockedTime || status.isOutsideHours || status.isBookedSlot) && (
+      {(status.isUnavailableDay || status.isBlockedDate || status.blockedReason || status.isBlockedTime || status.isOutsideHours || status.isBookedSlot || status.isAppointmentPastScheduleEnd) && (
         <p className="mt-4 rounded-md bg-primary/10 px-4 py-3 text-sm font-semibold text-primary">
           {(status.isBlockedDate || status.blockedReason)
             ? BLOCKED_DATE_MESSAGE
             : status.isBlockedTime
               ? BLOCKED_TIME_MESSAGE
             : status.isBookedSlot
-              ? "That time slot is already booked."
+              ? "That time slot overlaps with an existing booking or travel buffer."
+              : status.isAppointmentPastScheduleEnd
+                ? "That appointment would extend past Santa's schedule."
               : status.isOutsideHours
                 ? "That time is outside Santa's available hours."
                 : "Santa is not available on that day of the week."}
