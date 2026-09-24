@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,14 @@ const Navbar = () => {
     setOpen(false);
   }, [location.pathname]);
 
+  const scrollCurrentPageToTop = (to: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+    if (location.pathname === to) {
+      event.preventDefault();
+      setOpen(false);
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <header
       className={cn(
@@ -44,7 +52,7 @@ const Navbar = () => {
           scrolled ? "h-16 py-1 md:h-20 xl:h-20" : "h-24 py-2 md:h-28 xl:h-32",
         )}
       >
-        <Link to="/" className="flex min-w-0 items-center gap-3 group md:gap-5">
+        <Link to="/" onClick={scrollCurrentPageToTop("/")} className="flex min-w-0 items-center gap-3 group md:gap-5">
           <span
             className={cn(
               "flex shrink-0 items-center justify-center transition-all duration-300 ease-out",
@@ -69,6 +77,7 @@ const Navbar = () => {
               key={l.to}
               to={l.to}
               end={l.to === "/"}
+              onClick={scrollCurrentPageToTop(l.to)}
               className={({ isActive }) =>
                 cn(
                   "text-sm font-semibold transition-colors hover:text-primary lg:text-[0.95rem]",
@@ -83,7 +92,7 @@ const Navbar = () => {
 
         <div className="hidden xl:flex items-center gap-3">
           <Button asChild variant="hero" size="lg" className="pulse-gold shadow-gold">
-            <Link to="/book">Book Santa</Link>
+            <Link to="/book" onClick={scrollCurrentPageToTop("/book")}>Book Santa</Link>
           </Button>
         </div>
 
@@ -104,6 +113,7 @@ const Navbar = () => {
                 key={l.to}
                 to={l.to}
                 end={l.to === "/"}
+                onClick={scrollCurrentPageToTop(l.to)}
                 className={({ isActive }) =>
                   cn(
                     "py-2 text-base font-semibold",
@@ -115,7 +125,7 @@ const Navbar = () => {
               </NavLink>
             ))}
             <Button asChild variant="hero" className="mt-2">
-              <Link to="/book">Book Santa</Link>
+              <Link to="/book" onClick={scrollCurrentPageToTop("/book")}>Book Santa</Link>
             </Button>
           </nav>
         </div>

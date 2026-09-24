@@ -80,7 +80,11 @@ export interface AvailabilityDay {
 export interface BookedSlot {
   event_date: string;
   event_time: string;
-  status: "New" | "Contacted" | "Booked";
+  appointment_duration_minutes?: number | null;
+  blocked_start_time?: string | null;
+  blocked_end_time?: string | null;
+  schedule_end_time?: string | null;
+  status: "New" | "Contacted" | "Booked" | "Confirmed";
 }
 
 export const approvedTestimonialsQuery = `
@@ -140,9 +144,13 @@ export const siteSettingsQuery = `
 `;
 
 export const bookedSlotsQuery = `
-  *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked"]]{
+  *[_type == "bookingRequest" && status in ["New", "Contacted", "Booked", "Confirmed"]]{
     "event_date": eventDate,
     "event_time": eventTime,
+    "appointment_duration_minutes": appointmentDurationMinutes,
+    "blocked_start_time": blockedStartTime,
+    "blocked_end_time": blockedEndTime,
+    "schedule_end_time": scheduleEndTime,
     status
   }
 `;
@@ -354,6 +362,20 @@ export const getMonthDay = (dateString: string): string => {
   return normalized ? normalized.slice(5, 10) : "";
 };
 
+export const normalizeTimeTo24Hour = (time: string | null | undefined): string => {
+  if (!time) return "";
+  const value = time.trim();
+  const match12 = value.match(/^([1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i);
+  if (match12) {
+    const [, hourValue, minute, meridiem] = match12;
+    let hour = Number(hourValue);
+    if (meridiem.toUpperCase() === "PM" && hour !== 12) hour += 12;
+    if (meridiem.toUpperCase() === "AM" && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, "0")}:${minute}`;
+  }
+  return value.slice(0, 5);
+};
+
 export const isDateBlocked = (
   selectedDate: string | null | undefined,
   blockouts: BlockoutDate[] | undefined | null = [],
@@ -399,14 +421,14 @@ export const isTimeBlocked = (
   selectedTime: string | null | undefined,
   blockouts: BlockoutDate[] | undefined | null = [],
 ): boolean => {
-  const normalizedTime = typeof selectedTime === "string" ? selectedTime.slice(0, 5) : "";
+  const normalizedTime = normalizeTimeTo24Hour(selectedTime);
   if (!selectedDate || !normalizedTime || !blockouts || blockouts.length === 0) return false;
 
   return blockouts.some((blockout) => {
     if (blockout.isFullDay !== false || !isDateInBlockout(selectedDate, blockout)) return false;
 
-    const startTime = (blockout.startTime || "").slice(0, 5);
-    const endTime = (blockout.endTime || "").slice(0, 5);
+    const startTime = normalizeTimeTo24Hour(blockout.startTime);
+    const endTime = normalizeTimeTo24Hour(blockout.endTime);
 
     if (!startTime && !endTime) return false;
     if (startTime && !endTime) return normalizedTime === startTime;

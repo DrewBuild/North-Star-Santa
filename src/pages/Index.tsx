@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import Snow from "@/components/Snow";
 import Reveal from "@/components/Reveal";
 import CtaBanner from "@/components/CtaBanner";
+import ChristmasCountdown from "@/components/ChristmasCountdown";
 import { Home as HomeIcon, Building2, Heart, ArrowRight } from "lucide-react";
 import { bioPhotos, fallbackServices, heroSantaCutoutImg, heroSantaImg, withRequestedServicePhotoSwap } from "@/lib/localContent";
 import { getFeaturedServices, type Service } from "@/lib/sanityQueries";
+import titleImg from "@/assets/title.png";
 
 const bioBlocks = [
   {
@@ -56,17 +57,18 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-hero" />
         <Snow count={22} />
         <div className="relative container min-h-[82vh] pb-0 pt-20 md:min-h-[90vh] md:pt-24 lg:pt-24">
-          <div className="grid min-h-[calc(82vh-5rem)] items-center gap-10 md:min-h-[calc(90vh-6rem)] lg:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] lg:gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(430px,600px)]">
-            <div className="relative z-10 flex flex-col items-center self-center pb-8 text-center md:pb-10 lg:items-start lg:pb-20 lg:text-left xl:pb-24">
-              <p className="hero-kicker-glow mb-5 text-xs font-extrabold uppercase tracking-[0.42em] text-gold md:text-sm lg:text-[0.95rem] animate-fade-in">
-                ⋆ Professional Santa Claus ⋆
-              </p>
-              <h1 className="hero-title-gold font-christmas-display max-w-4xl text-5xl font-black uppercase leading-[0.98] md:text-7xl lg:text-[5.8rem] xl:text-[6.5rem] animate-fade-in">
-                North Star Santa
+          <div className="grid min-h-[calc(82vh-5rem)] items-center gap-10 md:min-h-[calc(90vh-6rem)] lg:grid-cols-[minmax(0,60%)_minmax(340px,40%)] lg:gap-7 xl:grid-cols-[minmax(0,62%)_minmax(410px,38%)]">
+            <div className="hero-title-container relative z-10 flex flex-col items-center self-center pb-8 text-center md:pb-10 lg:items-start lg:pb-20 lg:text-left xl:pb-24">
+              <h1 className="animate-fade-in">
+                <img
+                  src={titleImg}
+                  alt="North Star Santa making Christmas magic unforgettable"
+                  width={2508}
+                  height={627}
+                  className="hero-title-image"
+                />
               </h1>
-              <p className="hero-script-glow font-christmas-script mt-7 max-w-2xl text-2xl leading-snug text-primary-foreground md:text-3xl lg:text-4xl animate-fade-in">
-                Making Christmas Magic Unforgettable
-              </p>
+              <ChristmasCountdown />
             </div>
 
             <div className="santa-hero-figure z-0 mx-auto -mb-1 self-end">
@@ -82,9 +84,6 @@ const Home = () => {
                 height={577}
                 className="santa-hero-image hero-santa-glow relative z-10"
               />
-              <Button asChild variant="hero" size="xl" className="santa-hand-cta pulse-gold rounded-xl border border-gold/80 shadow-[0_0_30px_hsl(43_95%_68%_/_0.62),0_10px_28px_hsl(0_68%_20%_/_0.38),-10px_8px_24px_hsl(0_74%_38%_/_0.2),10px_8px_24px_hsl(113_37%_25%_/_0.24)] hover:shadow-[0_0_40px_hsl(43_98%_72%_/_0.78),0_12px_30px_hsl(0_68%_20%_/_0.4)]">
-                <Link to="/book">Book Santa Now</Link>
-              </Button>
             </div>
           </div>
         </div>

@@ -50,4 +50,18 @@ export default defineType({
       type: "datetime",
     }),
   ],
+  preview: {
+    select: {
+      title: "name",
+      organization: "organization",
+      submittedAt: "submittedAt",
+    },
+    prepare({ title, organization, submittedAt }) {
+      const date = submittedAt ? new Date(submittedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "";
+      return {
+        title: title || "Testimonial",
+        subtitle: [organization, date].filter(Boolean).join(" | "),
+      };
+    },
+  },
 });

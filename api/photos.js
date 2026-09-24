@@ -1,4 +1,12 @@
 import { createClient } from "@sanity/client";
+import {
+  DEFAULT_CONTACT_EMAIL,
+  formatDetailRowsHtml,
+  formatDetailRowsText,
+  getNotificationEmail,
+  sendResendEmail,
+  wrapEmailHtml,
+} from "./shared/email.js";
 
 const projectId = process.env.VITE_SANITY_PROJECT_ID || "wme1a7n3";
 const dataset = process.env.VITE_SANITY_DATASET || "production";
@@ -43,6 +51,26 @@ const parseDataUrlImage = (dataUrl) => {
   return { buffer, mimeType };
 };
 
+const sendPhotoNotification = async (client, data) => {
+  const details = [
+    ["Title", data.title],
+    ["Submitted By", data.submittedBy],
+    ["Email", data.submittedEmail],
+    ["Caption", data.caption],
+    ["Image Type", data.mimeType],
+    ["Image Size", data.sizeLabel],
+    ["Image URL", data.imageUrl],
+    ["Sanity document ID", data.sanityId],
+  ];
+
+  await sendResendEmail({
+    to: await getNotificationEmail(client),
+    subject: "New North Star Santa Photo Submission",
+    text: `New Photo Submission\n\n${formatDetailRowsText(details)}`,
+    html: wrapEmailHtml("New Photo Submission", formatDetailRowsHtml(details)),
+  });
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -67,6 +95,7 @@ export default async function handler(req, res) {
     }
 
     const image = parseDataUrlImage(body.imageDataUrl);
+    const sizeLabel = `${Math.round(image.buffer.length / 1024)} KB`;
 
     const asset = await client.assets.upload("image", image.buffer, {
       contentType: image.mimeType,
@@ -88,10 +117,28 @@ export default async function handler(req, res) {
       submittedAt: new Date().toISOString(),
     });
 
+    await sendPhotoNotification(client, {
+      title: title || "Submitted photo",
+      caption,
+      submittedBy,
+      submittedEmail,
+      mimeType: image.mimeType,
+      sizeLabel,
+      imageUrl: asset.url,
+      sanityId: created._id,
+    });
+
     return res.status(200).json({ success: true, id: created._id });
   } catch (error) {
-    console.error("Sanity create error:", error);
+    console.error("Photo handler error:", error);
     const msg = error instanceof Error ? error.message : String(error);
-    return res.status(500).json({ success: false, error: "Could not submit photo.", detail: msg });
+    const emailFailed = /email|resend/i.test(msg);
+    return res.status(500).json({
+      success: false,
+      error: emailFailed
+        ? `Could not send notification email to ${DEFAULT_CONTACT_EMAIL}. Please try again or email Santa directly.`
+        : "Could not submit photo.",
+      detail: msg,
+    });
   }
 }

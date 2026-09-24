@@ -51,4 +51,20 @@ export default defineType({
       type: "datetime",
     }),
   ],
+  preview: {
+    select: {
+      title: "title",
+      submittedBy: "submittedBy",
+      submittedAt: "submittedAt",
+      media: "image",
+    },
+    prepare({ title, submittedBy, submittedAt, media }) {
+      const date = submittedAt ? new Date(submittedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "";
+      return {
+        title: title || "Submitted photo",
+        subtitle: [submittedBy, date].filter(Boolean).join(" | "),
+        media,
+      };
+    },
+  },
 });

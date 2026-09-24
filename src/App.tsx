@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import FAQHelpPopup from "./components/FAQHelpPopup";
 import Layout from "./components/Layout";
+import ScrollToTop from "./components/ScrollToTop";
 import Index from "./pages/Index.tsx";
 import Testimonials from "./pages/Testimonials.tsx";
 import Gallery from "./pages/Gallery.tsx";
@@ -17,6 +18,7 @@ const App = () => (
     <Toaster />
     <Sonner />
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Index />} />
